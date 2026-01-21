@@ -1,5 +1,4 @@
 # WordPress
-.htaccess
 wp-config.php
 wp-content/uploads/
 wp-content/blogs.dir/
@@ -16,6 +15,7 @@ composer.lock
 node_modules/
 npm-debug.log
 yarn-error.log
+package-lock.json
 
 # IDE
 .idea/
@@ -24,6 +24,32 @@ yarn-error.log
 *.swo
 *~
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
+error_log
+debug.log
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
+
+# Build files
+/build/
+/dist/
+
+# Test files
+/tests/
+phpunit.xml
+.phpunit.result.cache

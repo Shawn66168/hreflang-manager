@@ -1,13 +1,21 @@
 ﻿<?php
 /**
  * Hreflang Core - Output hreflang tags
+ * 
+ * @package Hreflang_Manager
  */
-defined('ABSPATH') || exit;
+
+// 如果直接訪問此檔案則退出
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 /**
  * 初始化 hreflang 輸出
+ * 使用較低的優先級確保在其他 SEO 外掛之後執行
  */
 function hreflang_init() {
+    // 優先級設為 1，確保盡早輸出到 head
     add_action('wp_head', 'hreflang_output_hreflang', 1);
 }
 add_action('init', 'hreflang_init');
@@ -16,6 +24,11 @@ add_action('init', 'hreflang_init');
  * 在 <head> 中輸出 hreflang 標籤
  */
 function hreflang_output_hreflang() {
+    // 允許透過過濾器停用輸出（例如在特定頁面）
+    if (!apply_filters('hreflang_manager_enable_output', true)) {
+        return;
+    }
+    
     // 取得所有語言對應 URL
     $alternate_urls = hreflang_get_alternate_urls();
     
@@ -26,7 +39,7 @@ function hreflang_output_hreflang() {
     $languages = hreflang_get_languages();
     $default_lang = hreflang_get_default_language();
     
-    echo "\n<!-- Hreflang Manager Hreflang -->\n";
+    echo "\n<!-- Hreflang Manager -->\n";
     
     // 輸出每個語言的 hreflang
     foreach ($alternate_urls as $lang_code => $url) {
@@ -57,8 +70,20 @@ function hreflang_output_hreflang() {
         }
     }
     
-    echo "<!-- /Hreflang Manager Hreflang -->\n\n";
+    echo "<!-- /Hreflang Manager -->\n\n";
 }
+
+/**
+ * 檢查是否應該移除其他外掛的 hreflang 輸出
+ * 避免重複輸出造成 SEO 問題
+ */
+function hreflang_manager_remove_conflicting_hreflang() {
+    // 移除 Yoast SEO Premium 的 hreflang（如果存在）
+    if (has_filter('wpseo_hreflang_url')) {
+        remove_all_filters('wpseo_hreflang_url');
+    }
+}
+add_action('template_redirect', 'hreflang_manager_remove_conflicting_hreflang', 1);
 
 /**
  * 在文章編輯頁面加入 ACF 欄位（如果使用 ACF）

@@ -1,8 +1,14 @@
 ﻿<?php
 /**
  * Admin Notices - 提示未填寫語言 URL 的內容
+ * 
+ * @package Hreflang_Manager
  */
-defined('ABSPATH') || exit;
+
+// 如果直接訪問此檔案則退出
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 /**
  * 初始化後台提示

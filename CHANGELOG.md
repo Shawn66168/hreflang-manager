@@ -14,10 +14,35 @@
 - ✅ 分類/標籤列表頁面顯示 Hreflang 狀態
 - ✅ 可自訂 CSS 樣式
 
+### WordPress 規範
+- ✅ 符合 WordPress Plugin Handbook 規範
+- ✅ 添加 readme.txt（WordPress.org 格式）
+- ✅ 實作啟用/停用 Hook
+- ✅ 實作 uninstall.php 清理腳本
+- ✅ 添加外掛常數定義
+- ✅ 系統需求檢查（PHP 7.4+、WordPress 5.0+）
+- ✅ 防止目錄瀏覽（index.php）
+- ✅ 添加外掛列表頁面的快速連結
+- ✅ 完整的 ABSPATH 安全檢查
+
+### SEO 外掛相容性
+- ✅ Yoast SEO 相容性處理
+- ✅ Rank Math 相容性檢查
+- ✅ All in One SEO 相容性檢查
+- ✅ 避免重複 hreflang 輸出
+- ✅ 優先級控制避免衝突
+
 ### 過濾器
 - `hreflang_languages` - 修改語言清單
 - `hreflang_alternate_urls` - 修改輸出 URL
 - `hreflang_default_language` - 修改預設語言
+- `hreflang_manager_enable_output` - 控制是否輸出 hreflang（新增）
+
+### 安全性增強
+- ✅ 所有 PHP 檔案添加 ABSPATH 檢查
+- ✅ 目錄瀏覽保護（index.php）
+- ✅ .htaccess 防護（可選）
+- ✅ 完整的資料過濾和驗證
 
 ### 已知限制
 - 目前僅支援手動填寫各語言 URL

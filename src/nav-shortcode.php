@@ -1,8 +1,14 @@
 ﻿<?php
 /**
  * Language Switcher Shortcode
+ * 
+ * @package Hreflang_Manager
  */
-defined('ABSPATH') || exit;
+
+// 如果直接訪問此檔案則退出
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 /**
  * 註冊語言切換短碼

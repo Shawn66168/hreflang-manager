@@ -1,8 +1,14 @@
 ﻿<?php
 /**
  * Helper functions for Hreflang Manager Plugin
+ * 
+ * @package Hreflang_Manager
  */
-defined('ABSPATH') || exit;
+
+// 如果直接訪問此檔案則退出
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 /**
  * 取得外掛設定的語言清單

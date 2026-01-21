@@ -1,0 +1,8 @@
+# Prevent directory browsing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "\.(md|json|lock)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
