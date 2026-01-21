@@ -22,6 +22,7 @@ add_action('init', 'hreflang_init');
 
 /**
  * 在 <head> 中輸出 hreflang 標籤
+ * 根據原始 Portwell Snippet 的邏輯設計
  */
 function hreflang_output_hreflang() {
     // 允許透過過濾器停用輸出（例如在特定頁面）
@@ -29,43 +30,43 @@ function hreflang_output_hreflang() {
         return;
     }
     
-    // 取得所有語言對應 URL
-    $alternate_urls = hreflang_get_alternate_urls();
+    // 偵測當前站點語言
+    $current_lang = hreflang_detect_current_language();
     
-    if (empty($alternate_urls)) {
+    // 取得當前頁面 URL
+    $current_url = hreflang_get_current_url();
+    
+    if (!$current_url) {
         return;
     }
     
-    $languages = hreflang_get_languages();
-    $default_lang = hreflang_get_default_language();
-    
     echo "\n<!-- Hreflang Manager -->\n";
     
-    // 輸出每個語言的 hreflang
+    // 1. 輸出當前頁面自己的 hreflang
+    printf(
+        '<link rel="alternate" hreflang="%s" href="%s" />'."\n",
+        esc_attr($current_lang),
+        esc_url($current_url)
+    );
+    
+    // 2. 輸出 x-default（只在預設語言的首頁）
+    $default_lang = hreflang_get_default_language();
+    if ($current_lang === $default_lang && (is_front_page() || is_home())) {
+        printf(
+            '<link rel="alternate" hreflang="x-default" href="%s" />'."\n",
+            esc_url(hreflang_normalize_url(home_url('/')))
+        );
+    }
+    
+    // 3. 輸出其他語言的 hreflang
+    $alternate_urls = hreflang_get_alt_urls_for_current();
+    
     foreach ($alternate_urls as $lang_code => $url) {
         if (!empty($url)) {
             printf(
-                '<link rel="alternate" hreflang="%s" href="%s" />' . "\n",
+                '<link rel="alternate" hreflang="%s" href="%s" />'."\n",
                 esc_attr($lang_code),
-                esc_url($url)
-            );
-        }
-    }
-    
-    // 如果是首頁，輸出 x-default
-    if (is_home() || is_front_page()) {
-        $default_url = '';
-        foreach ($languages as $lang) {
-            if ($lang['code'] === $default_lang && $lang['active']) {
-                $default_url = trailingslashit($lang['domain']);
-                break;
-            }
-        }
-        
-        if (!empty($default_url)) {
-            printf(
-                '<link rel="alternate" hreflang="x-default" href="%s" />' . "\n",
-                esc_url($default_url)
+                esc_url(hreflang_normalize_url($url))
             );
         }
     }
@@ -84,6 +85,72 @@ function hreflang_manager_remove_conflicting_hreflang() {
     }
 }
 add_action('template_redirect', 'hreflang_manager_remove_conflicting_hreflang', 1);
+
+/**
+ * 取得當前頁面的所有語言對應 URL
+ * 根據原始 Portwell Snippet 的邏輯設計
+ * 
+ * @return array 語言代碼 => URL 的對應陣列（不包含自己）
+ */
+function hreflang_get_alt_urls_for_current() {
+    $current_lang = hreflang_detect_current_language();
+    $languages = hreflang_get_languages();
+    $urls = [];
+    
+    // 根據語言建立 meta key 對應（相容舊的 Portwell 命名）
+    $lang_meta_map = [];
+    foreach ($languages as $lang) {
+        if (!$lang['active']) continue;
+        // 支援多種 meta key 格式
+        $lang_meta_map[$lang['code']] = [
+            'post' => 'alt_' . $lang['code'] . '_url',
+            'term' => 'term_alt_' . $lang['code'] . '_url',
+        ];
+    }
+    
+    if (is_singular()) {
+        // 文章或頁面
+        $post_id = get_the_ID();
+        
+        // 取得所有語言的 URL
+        foreach ($lang_meta_map as $code => $keys) {
+            $url = get_post_meta($post_id, $keys['post'], true);
+            if ($url) {
+                $urls[$code] = $url;
+            }
+        }
+        
+    } elseif (is_category() || is_tag() || is_tax()) {
+        // 支援所有分類頁面（部落格分類/標籤 + 自訂分類 + WooCommerce 分類）
+        $term = get_queried_object();
+        if ($term && !is_wp_error($term) && !empty($term->term_id)) {
+            foreach ($lang_meta_map as $code => $keys) {
+                $url = get_term_meta($term->term_id, $keys['term'], true);
+                if ($url) {
+                    $urls[$code] = $url;
+                }
+            }
+        }
+        
+    } else {
+        // Fallback：非單一頁面，沒有對應資料時轉到首頁
+        foreach ($languages as $lang) {
+            if (!$lang['active']) continue;
+            $urls[$lang['code']] = trailingslashit($lang['domain']);
+        }
+    }
+    
+    // 移除當前語言（不輸出自己）
+    if (isset($urls[$current_lang])) {
+        unset($urls[$current_lang]);
+    }
+    
+    // 使用 filter 過濾（排除同域名和相同頁面）
+    $urls = hreflang_filter_targets($urls);
+    
+    // 允許過濾器修改 URL 列表
+    return apply_filters('hreflang_alternate_urls', $urls, get_queried_object());
+}
 
 /**
  * 在文章編輯頁面加入 ACF 欄位（如果使用 ACF）
