@@ -14,7 +14,7 @@
 
 ```bash
 cd wp-content/plugins/
-git clone <repository-url> hreflang-manager
+git clone https://github.com/Shawn66168/hreflang-manager.git
 cd hreflang-manager
 composer install  # 如果需要使用 Composer 依賴
 ```

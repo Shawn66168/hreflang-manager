@@ -9,8 +9,8 @@
 
 ### 2. Git Remote 已設定
 ```
-origin  https://github.com/shawen66/hreflang-manager.git (fetch)
-origin  https://github.com/shawen66/hreflang-manager.git (push)
+origin  https://github.com/Shawn66168/hreflang-manager.git (fetch)
+origin  https://github.com/Shawn66168/hreflang-manager.git (push)
 ```
 
 ## ✅ 主要修改

@@ -539,7 +539,7 @@ if (!current_user_can('edit_post', $post_id)) {
 ```bash
 # 安裝到 WordPress
 cd /path/to/wordpress/wp-content/plugins/
-git clone <repo-url> hreflang-manager
+git clone https://github.com/Shawn66168/hreflang-manager.git
 
 # 啟用外掛
 wp plugin activate hreflang-manager
@@ -889,7 +889,7 @@ function hreflang_debug($message) {
 **授權**：GPL-2.0-or-later  
 **作者**：CHUANG,HSIN-HSUEH  
 **郵箱**：shawen66@gmail.com  
-**GitHub**：https://github.com/shawen66/hreflang-manager
+**GitHub**：https://github.com/Shawn66168/hreflang-manager
 
 ---
 

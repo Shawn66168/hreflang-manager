@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Hreflang Manager & Language Switcher
- * Plugin URI:  https://github.com/shawen66/hreflang-manager
+ * Plugin URI:  https://github.com/Shawn66168/hreflang-manager
  * Description: 輸出 hreflang 標籤 + 語言切換元件，支援多語站點與 ACF URL 對應。
  * Version:     1.0.0
  * Author:      CHUANG,HSIN-HSUEH
- * Author URI:  https://github.com/shawen66
+ * Author URI:  https://github.com/Shawn66168
  * Text Domain: hreflang-manager
  * Domain Path: /languages
  */

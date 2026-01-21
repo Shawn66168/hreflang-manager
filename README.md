@@ -31,18 +31,19 @@
 
 ```
 hreflang-manager/
-├─ hreflang-manager.php
-├─ composer.json
-├─ languages/
+├─ hreflang-switch.php          # 主外掛檔案
+├─ composer.json                 # Composer 配置
+├─ .skills/
+│  └─ ARCHITECTURE.md            # 架構規範文件
 ├─ src/
-│  ├─ helpers.php
-│  ├─ hreflang-core.php
-│  ├─ nav-shortcode.php
-│  ├─ admin-notice.php
-│  └─ admin-settings.php
+│  ├─ helpers.php                # 工具函式
+│  ├─ hreflang-core.php         # Hreflang 輸出邏輯
+│  ├─ nav-shortcode.php         # 語言切換短碼
+│  ├─ admin-notice.php          # 後台提示系統
+│  └─ admin-settings.php        # 設定頁面
 └─ assets/
    └─ css/
-      └─ style.css
+      └─ style.css               # 語言切換器樣式
 ```
 
 ---
@@ -87,8 +88,9 @@ hreflang-manager/
 
 或以 git 開發流程：
 
-```powershell
-git clone <repo-url> hreflang-manager
+```bash
+git clone https://github.com/Shawn66168/hreflang-manager.git
+cd hreflang-manager
 # 將資料夾放入 WordPress plugins 中並啟用
 ```
 
@@ -150,12 +152,32 @@ URL 對應建議：文章/頁面可使用 ACF 或 post meta 儲存替代 URL（�
 - 請使用 `load_plugin_textdomain()` 加入翻譯支援。
 
 ## 開發與貢獻
-- 建議在本機建立 WordPress 測試環境（Local、Docker 等）。
-- 提交 PR 時請包含變更說明與必要示例。
-- 若要我代為新增功能：設定頁、單元測試或 CI，我可以幫你實作。
+
+### 開發環境
+- 建議在本機建立 WordPress 測試環境（Local、Docker 等）
+- PHP 7.4+
+- WordPress 5.0+
+
+### 參考文件
+- [架構規範文件](.skills/ARCHITECTURE.md) - 詳細的開發規範與指南
+- [快速開始](QUICKSTART.md) - 5 分鐘快速設定
+- [安裝指南](INSTALLATION.md) - 詳細安裝步驟
+
+### 貢獻流程
+1. Fork 本專案
+2. 建立功能分支 (`git checkout -b feature/amazing-feature`)
+3. 遵循 `.skills/ARCHITECTURE.md` 中的開發規範
+4. 提交變更 (`git commit -m 'Add amazing feature'`)
+5. 推送到分支 (`git push origin feature/amazing-feature`)
+6. 開啟 Pull Request
 
 ## 授權
-請在專案根目錄新增 `LICENSE` 指定授權條款（目前未指定）。
+本專案採用 GPL-2.0-or-later 授權。
+
+## 作者
+- **CHUANG,HSIN-HSUEH**
+- Email: shawen66@gmail.com
+- GitHub: https://github.com/Shawn66168/hreflang-manager
 
 ## 路線圖
 - v1.1: Block/區塊型語言切換元件

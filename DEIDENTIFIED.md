@@ -37,6 +37,7 @@
 ### 作者資訊
 - **作者**: CHUANG,HSIN-HSUEH
 - **Email**: shawen66@gmail.com
+- **GitHub**: https://github.com/Shawn66168/hreflang-manager
 
 ## 已更新的檔案
 
