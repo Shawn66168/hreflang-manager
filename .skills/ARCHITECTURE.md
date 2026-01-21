@@ -1,7 +1,7 @@
 # Hreflang Manager 專案架構規範
 
 > **專案專屬架構規範與開發指南**  
-> 最後更新：2026-01-21  
+> 最後更新：2026-01-21 (整合原始 Snippet 核心功能)  
 > 作者：CHUANG,HSIN-HSUEH
 
 ## 📋 目錄
@@ -48,31 +48,42 @@
 ```
 wp-hreflang-manager/
 ├── hreflang-switch.php              # 主外掛檔案（入口點）
-├── hreflang-manager.php             # 備用主檔案
+├── readme.txt                       # WordPress.org 標準格式文檔
+├── uninstall.php                    # 卸載清理腳本
 ├── composer.json                    # Composer 配置
 ├── .gitignore                       # Git 忽略規則
-├── README.md                        # 專案說明文件
+├── README.md                        # GitHub 簡潔說明
 ├── INSTALLATION.md                  # 安裝指南
 ├── QUICKSTART.md                    # 快速開始
+├── EXAMPLES.md                      # 使用範例
 ├── CHANGELOG.md                     # 更新日誌
-├── PROJECT_SUMMARY.md               # 專案總結
 ├── LICENSE                          # GPL-2.0 授權
 │
 ├── .skills/                         # 專案規範文件
 │   └── ARCHITECTURE.md              # 本文件
 │
 ├── src/                             # 核心程式碼
-│   ├── helpers.php                  # 工具函式
-│   ├── hreflang-core.php           # Hreflang 輸出邏輯
-│   ├── nav-shortcode.php           # 語言切換短碼
+│   ├── helpers.php                  # 工具函式（含 URL 正規化、same page filter）
+│   ├── hreflang-core.php           # Hreflang 輸出邏輯（三步驟輸出）
+│   ├── nav-shortcode.php           # 語言切換短碼（下拉選單 + inline JS）
 │   ├── admin-notice.php            # 後台提示系統
-│   └── admin-settings.php          # 設定頁面
+│   ├── admin-settings.php          # 設定頁面
+│   └── index.php                    # 目錄安全保護
 │
-└── assets/                          # 前端資源
-    └── css/
-        └── style.css                # 語言切換器樣式
-```
-
+├── assets/                          # 前端資源
+│   ├── css/
+│   │   └── style.css                # 語言切換器樣式（下拉 + 清單）
+│   └── index.php                    # 目錄安全保護
+│
+└── 開發文件（本地保核心函式 |
+|------|------|---------|
+| `hreflang-switch.php` | 外掛入口、常數定義、載入所有模組、啟用/停用 hooks | - |
+| `uninstall.php` | 卸載時清理選項、meta 資料 | - |
+| `helpers.php` | 工具函式庫 | `hreflang_normalize_url()`<br>`hreflang_get_current_url()`<br>`hreflang_is_same_page()`<br>`hreflang_filter_targets()`<br>`hreflang_detect_current_language()`<br>`hreflang_get_languages()` |
+| `hreflang-core.php` | Hreflang 標籤輸出（三步驟） | `hreflang_output_hreflang()`<br>`hreflang_get_alt_urls_for_current()`<br>`hreflang_manager_remove_conflicting_hreflang()` |
+| `nav-shortcode.php` | 語言切換器（下拉 + 清單 + inline JS） | `hreflang_switcher_shortcode()`<br>`hreflang_enqueue_switcher_styles()` |
+| `admin-settings.php` | 後台設定頁面 | `hreflang_render_settings_page()` |
+| `admin-notice.php` | 後台通知系統
 ### 檔案職責
 
 | 檔案 | 職責 | 大小 | 核心函式 |
@@ -155,12 +166,17 @@ do_action('hreflang_after_output', $urls);
 ```
 
 ### CSS 類別命名
-
-**格式**：`hreflang-{元件}-{子元件}`
+ 或 `pww-{元件}`（原始 Snippet 風格）
 
 ```css
-/* ✅ 正確 */
-.hreflang-lang-switcher {}
+/* ✅ 下拉選單樣式（原始 Snippet 結構） */
+.pww-navlang {}
+.pww-navlang__btn {}
+.pww-navlang__menu {}
+.pww-navlang__menu.is-open {}
+
+/* ✅ 清單樣式 */
+.hreflang-lang-switcherer {}
 .hreflang-lang-select {}
 .hreflang-lang-item {}
 .hreflang-lang-link {}
@@ -258,7 +274,61 @@ add_action('admin_menu', 'hreflang_add_settings_page');
 $languages = apply_filters('hreflang_languages', $languages);
 
 // ✅ 使用優先級控制執行順序
-add_action('wp_head', 'hreflang_output_hreflang', 1);  // 優先輸出
+add核心功能說明
+
+### Hreflang 輸出邏輯（三步驟）
+
+根據原始 Portwell Snippet 設計，hreflang 標籤輸出採用三步驟：
+
+```php
+// 步驟 1: 輸出當前頁面自己的 hreflang
+<link rel="alternate" hreflang="zh-Hant" href="https://www.example.tw/page/" />
+
+// 步驟 2: x-default 只在預設語言的首頁輸出
+<link rel="alternate" hreflang="x-default" href="https://www.example.com/" />
+
+// 步驟 3: 輸出其他語言的 hreflang（排除自己）
+<link rel="alternate" hreflang="en" href="https://www.example.com/page/" />
+<link rel="alternate" hreflang="zh-Hans" href="https://www.example.cn/page/" />
+```
+
+### URL 正規化流程
+
+```php
+hreflang_normalize_url($url)
+    ↓
+1. 確保使用 https
+2. 解析 URL 組成（scheme, host, path, query, fragment）
+3. 確保 path 以 / 開頭並結尾（trailing slash）
+4. 重組 URL：scheme://host/path/query#fragment
+```
+
+### Same Page Filter
+
+避免輸出相同頁面的 hreflang：
+
+```php
+hreflang_filter_targets($urls)
+    ↓
+1. 排除與當前站點相同域名的 URL
+2. 排除與當前頁面相同的 URL（比較 host + path）
+3. 忽略 query string 和 fragment 的差異
+```
+
+### 語言偵測邏輯
+
+```php
+hreflang_detect_current_language()
+    ↓
+1. 取得當前 HTTP_HOST
+2. 遍歷語言設定比對域名
+3. 找到匹配則回傳語言代碼
+4. 否則回傳預設語言
+```
+
+---
+
+## _action('wp_head', 'hreflang_output_hreflang', 1);  // 優先輸出
 ```
 
 ---
@@ -268,13 +338,37 @@ add_action('wp_head', 'hreflang_output_hreflang', 1);  // 優先輸出
 ### 語言資料結構
 
 **選項鍵**：`hreflang_languages`  
-**類型**：Array of Objects
+**類型**：Arrdetect_current_language()] → 根據域名偵測
+      ↓
+[hreflang_get_alt_urls_for_current()]
+      ↓
+[Post/Term Meta] → [URL 對應]
+      ↓
+[hreflang_filter_targets()] → 排除同域名和相同頁面
+      ↓
+[hreflang_normalize_url()] → URL 正規化
+      ↓
+[hreflang_output_hreflang()] → <head> 三步驟輸出
+      ↓
+[語言切換器短碼] → [hreflang_switcher]
+```
+
+### Meta Key 對應規則
+
+**原始 Snippet 相容性**：外掛支援原始 Portwell Snippet 的 meta key 格式
 
 ```php
-[
-    [
-        'code'   => 'en',              // 語言代碼（ISO 639-1）
-        'locale' => 'en-US',           // Locale 代碼
+// Post Meta 格式（舊 Snippet 格式）
+'alt_en_url'      // 英文 URL
+'alt_tw_url'      // 台灣繁中 URL (對應 zh-Hant)
+'alt_cn_url'      // 簡體中文 URL (對應 zh-Hans)
+'alt_es_url'      // 西班牙文 URL (對應 es-MX)
+
+// 新格式（語言代碼直接對應）
+'alt_{lang_code}_url'  // 例如：alt_ja_url, alt_fr_url
+
+// Term Meta 格式
+'term_alt_{lang_code}_url'locale' => 'en-US',           // Locale 代碼
         'domain' => 'www.example.com', // 域名（不含協議）
         'label'  => 'English',         // 顯示名稱
         'active' => true,              // 是否啟用（boolean）
@@ -356,23 +450,40 @@ add_action('wp_head', 'hreflang_output_hreflang', 1);  // 優先輸出
 add_filter('hreflang_languages', function($languages) {
     // 動態新增語言
     $languages[] = [
-        'code'   => 'fr',
-        'locale' => 'fr-FR',
-        'domain' => 'www.example.fr',
-        'label'  => 'Français',
-        'active' => true,
-        'order'  => 10
-    ];
-    return $languages;
-});
+支援兩種樣式系統：
+
+```css
+/* ========== 下拉選單樣式（原始 Snippet 設計）========== */
+.pww-navlang {
+    position: relative;
+}
+.pww-navlang__btn {
+    /* 按鈕樣式 */
+}
+.pww-navlang__menu {
+    /* 選單樣式 */
+}
+.pww-navlang__menu.is-open {
+    /* 展開狀態 */
+}
+
+/* ========== 清單樣式 ========== */
+.hreflang-lang-switcher.hreflang-list {}
+.hreflang-lang-item {}
+.hreflang-lang-link {}
+.hreflang-lang-item.active {}
 ```
 
-#### 2. `hreflang_alternate_urls`
+### Inline JavaScript
 
-修改輸出的 URL 列表
+下拉選單使用 inline JavaScript（緊跟 HTML 輸出）：
 
-```php
-/**
+```javascript
+// 特點：
+// 1. 使用 document.currentScript 定位父元素
+// 2. 點擊按鈕切換 .is-open class
+// 3. 點擊外部自動關閉
+// 4. 使用 aria-hidden 提升無障礙性
  * 修改 URL 列表
  * 
  * @param array  $urls   語言代碼 => URL 的對應陣列
@@ -655,7 +766,19 @@ elseif (is_author()) {
     // 處理作者頁面
 }
 ```
+目前支援的樣式：
 
+```php
+// 下拉選單（預設，使用原始 Snippet 設計）
+[hreflang_switcher style="dropdown"]
+[hreflang_switcher style="dropdown" class="custom-class"]
+
+// 清單樣式
+[hreflang_switcher style="list"]
+[hreflang_switcher style="list" class="custom-class"]
+```
+
+未來可擴展的樣式
 ### 整合第三方外掛
 
 #### 範例：整合 WPML
@@ -840,8 +963,50 @@ function hreflang_debug($message) {
 - [ ] OOP 重構
 - [ ] WP-CLI 支援
 - [ ] GraphQL API
-- [ ] 完整單元測試覆蓋
-- [ ] WPML/Polylang 深度整合
+## 版本更新紀錄
+
+### v1.0.0 (2026-01-21)
+
+**整合原始 Snippet 核心功能**
+
+#### helpers.php 新增函式
+- `hreflang_normalize_url()` - URL 正規化（https + trailing slash + 保留 query/fragment）
+- `hreflang_get_current_url()` - 改進版本，完整支援分頁、搜尋、archive
+- `hreflang_is_same_page()` - 判斷兩個 URL 是否為同一頁面
+- `hreflang_filter_targets()` - 過濾目標 URL（排除同域名和相同頁面）
+- `hreflang_detect_current_language()` - 根據域名自動偵測語言
+- `hreflang_get_language_label()` - 取得語言顯示名稱
+
+#### hreflang-core.php 重寫
+- `hreflang_output_hreflang()` - 採用三步驟輸出邏輯
+  1. 輸出當前頁面自己的 hreflang
+  2. x-default 只在預設語言首頁輸出
+  3. 輸出其他語言（排除自己）
+- `hreflang_get_alt_urls_for_current()` - 新函式，取得替代 URL（不含當前語言）
+- 支援 singular、taxonomy、fallback 首頁
+- 自動使用 filter 過濾同域名和相同頁面
+
+#### nav-shortcode.php 重寫
+- 下拉選單使用原始 Snippet 的 `.pww-navlang` HTML 結構
+- 加入 inline JavaScript 處理下拉開關和外部點擊關閉
+- 改用 inline CSS 注入（效能更好）
+- 清單樣式顯示當前語言為 active 狀態
+
+#### style.css 優化
+- 加入完整的 `.pww-navlang` 下拉選單樣式
+- 優化清單樣式和響應式設計
+- 加入 box-shadow 和 transition 效果
+
+#### 檔案結構清理
+- 移除重複檔案 `hreflang-manager.php`
+- 開發文件移至本地（不上傳 Git）
+- 簡化 `README.md` 作為 GitHub 引導頁面
+- 保留 `readme.txt` 作為 WordPress.org 完整文檔
+
+---
+
+**文件版本**：1.0.0  
+**最後更新**：2026-01-21 (整合原始 Snippet 核心功能) 深度整合
 
 ---
 
