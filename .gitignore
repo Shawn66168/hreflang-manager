@@ -53,3 +53,10 @@ Desktop.ini
 /tests/
 phpunit.xml
 .phpunit.result.cache
+
+# Development documentation (local only)
+DEIDENTIFIED.md
+RENAME_COMPLETE.md
+RENAMING.md
+WORDPRESS_ORG_COMPLIANCE.md
+PROJECT_SUMMARY.md
