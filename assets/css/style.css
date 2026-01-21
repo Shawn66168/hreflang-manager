@@ -1,0 +1,78 @@
+﻿/* Hreflang Manager Language Switcher Styles */
+
+/* 下拉選單樣式 */
+.hreflang-lang-switcher.hreflang-dropdown {
+    display: inline-block;
+    margin: 10px 0;
+}
+
+.hreflang-lang-select {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.hreflang-lang-select:hover {
+    border-color: #999;
+}
+
+.hreflang-lang-select:focus {
+    outline: none;
+    border-color: #0073aa;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+/* 清單樣式 */
+.hreflang-lang-switcher.hreflang-list {
+    list-style: none;
+    margin: 10px 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.hreflang-lang-item {
+    display: inline-block;
+}
+
+.hreflang-lang-link {
+    display: inline-block;
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.hreflang-lang-link:hover {
+    background-color: #f5f5f5;
+    border-color: #999;
+    color: #000;
+}
+
+.hreflang-lang-item.active .hreflang-lang-link {
+    background-color: #0073aa;
+    border-color: #0073aa;
+    color: #fff;
+    font-weight: bold;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .hreflang-lang-switcher.hreflang-list {
+        justify-content: center;
+    }
+    
+    .hreflang-lang-link {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+}
