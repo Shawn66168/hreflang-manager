@@ -202,16 +202,14 @@ function hreflang_get_alternate_urls() {
  */
 function hreflang_normalize_url($url) {
     if (!$url) return '';
-    
-    // 確保使用 https
-    $url = set_url_scheme($url, 'https');
-    
+
     $parsed = wp_parse_url($url);
     if (!$parsed || empty($parsed['host'])) {
         return $url; // fallback
     }
-    
-    $scheme = $parsed['scheme'] ?? 'https';
+
+    $home_parsed = wp_parse_url(home_url('/'));
+    $scheme = $parsed['scheme'] ?? ($home_parsed['scheme'] ?? (is_ssl() ? 'https' : 'http'));
     $host   = $parsed['host'];
     $port   = isset($parsed['port']) ? ':' . intval($parsed['port']) : '';
     $path   = $parsed['path'] ?? '/';
