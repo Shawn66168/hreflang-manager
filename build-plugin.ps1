@@ -31,7 +31,7 @@ Get-ChildItem -Exclude $exclude | ForEach-Object {
 
 # 5. 驗證必要檔案
 Write-Host "驗證檔案結構..." -ForegroundColor Yellow
-$requiredFiles = @("hreflang-switch.php", "readme.txt", "uninstall.php")
+$requiredFiles = @("hreflang-manager.php", "readme.txt", "uninstall.php")
 $missing = @()
 
 foreach ($file in $requiredFiles) {
@@ -65,7 +65,7 @@ if (Test-Path $zipName) {
     Write-Host "`n📦 ZIP 結構:" -ForegroundColor Cyan
     Write-Host "  $zipName"
     Write-Host "  └── $pluginSlug/"
-    Write-Host "      ├── hreflang-switch.php (主檔案)"
+    Write-Host "      ├── hreflang-manager.php (主檔案)"
     Write-Host "      ├── readme.txt"
     Write-Host "      ├── uninstall.php"
     Write-Host "      ├── src/"

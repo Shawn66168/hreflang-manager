@@ -67,11 +67,11 @@ wp cache flush
 ### 外掛管理
 ```powershell
 # 查看外掛狀態
-docker compose run --rm wpcli wp plugin status wp-hreflang-manager/hreflang-manager
+docker compose run --rm wpcli wp plugin status wp-hreflang-manager/hreflang-manager.php
 
 # 停用重啟（清除快取）
-docker compose run --rm wpcli wp plugin deactivate wp-hreflang-manager/hreflang-manager
-docker compose run --rm wpcli wp plugin activate wp-hreflang-manager/hreflang-manager
+docker compose run --rm wpcli wp plugin deactivate wp-hreflang-manager/hreflang-manager.php
+docker compose run --rm wpcli wp plugin activate wp-hreflang-manager/hreflang-manager.php
 ```
 
 ### 測試數據
@@ -146,7 +146,7 @@ docker compose exec wordpress cat /var/www/html/wp-content/debug.log
 ### 外掛衝突？
 ```powershell
 # 停用所有其他外掛
-docker compose run --rm wpcli wp plugin deactivate --all --exclude=wp-hreflang-manager/hreflang-manager
+docker compose run --rm wpcli wp plugin deactivate --all --exclude=wp-hreflang-manager/hreflang-manager.php
 ```
 
 ### 重置環境？
