@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 /**
  * Plugin Name: Hreflang Manager & Language Switcher
  * Plugin URI:  https://github.com/Shawn66168/hreflang-manager
- * Description: 頛詨 hreflang 璅惜 + 隤????辣嚗?游?隤?暺? ACF URL 撠???
+ * Description: Manage hreflang alternate tags and language switcher. Supports ACF custom URL fields for multi-language SEO.
  * Version:     1.0.0
  * Requires at least: 5.0
  * Requires PHP: 7.4
@@ -65,7 +65,7 @@ function hreflang_manager_activate() {
         deactivate_plugins(HREFLANG_MANAGER_PLUGIN_BASENAME);
         wp_die(
             implode('<br>', $errors),
-            __('憭??憭望?', 'hreflang-manager'),
+            __('Plugin Activation Error', 'hreflang-manager'),
             ['back_link' => true]
         );
     }
@@ -164,8 +164,7 @@ function hreflang_manager_add_action_links($links) {
     $settings_link = sprintf(
         '<a href="%s">%s</a>',
         admin_url('options-general.php?page=hreflang-settings'),
-        __('閮剖?', 'hreflang-manager')
-    );
+        __('Documentation', 'hreflang-manager'));
     
     array_unshift($links, $settings_link);
     
@@ -182,13 +181,11 @@ function hreflang_manager_add_plugin_row_meta($links, $file) {
             'docs' => sprintf(
                 '<a href="%s" target="_blank">%s</a>',
                 'https://github.com/Shawn66168/hreflang-manager/blob/master/README.md',
-                __('??', 'hreflang-manager')
-            ),
+                __('Documentation', 'hreflang-manager')),
             'support' => sprintf(
                 '<a href="%s" target="_blank">%s</a>',
                 'https://github.com/Shawn66168/hreflang-manager/issues',
-                __('?舀', 'hreflang-manager')
-            ),
+                __('Support', 'hreflang-manager')),
         ];
         
         return array_merge($links, $row_meta);
