@@ -140,10 +140,71 @@ function hreflang_render_settings_page() {
         echo '<div class="notice notice-success"><p>設定已儲存。</p></div>';
     }
 
-    // 處理外觀設定儲存
+    // 處理外觀設定儲存（多組主題）
     if (isset($_POST['hreflang_save_styles']) && check_admin_referer('hreflang_styles_nonce')) {
-        $styles = hreflang_sanitize_switcher_styles($_POST['styles'] ?? []);
-        update_option('hreflang_switcher_styles', $styles);
+        $posted_themes = isset($_POST['style_themes']) && is_array($_POST['style_themes'])
+            ? $_POST['style_themes']
+            : ['default'];
+
+        $new_theme_raw = sanitize_text_field($_POST['new_theme_name'] ?? '');
+        if (!empty($new_theme_raw)) {
+            $posted_themes[] = $new_theme_raw;
+        }
+
+        $normalized_themes = [];
+        foreach ($posted_themes as $theme_name) {
+            $theme = preg_replace('/[^a-z0-9\-_]/', '', strtolower(sanitize_key($theme_name)));
+            if (!empty($theme)) {
+                $normalized_themes[] = $theme;
+            }
+        }
+
+        if (!in_array('default', $normalized_themes, true)) {
+            array_unshift($normalized_themes, 'default');
+        }
+
+        $normalized_themes = array_values(array_unique($normalized_themes));
+
+        $remove_themes = isset($_POST['remove_themes']) && is_array($_POST['remove_themes'])
+            ? $_POST['remove_themes']
+            : [];
+        $remove_themes = array_map(function ($theme_name) {
+            return preg_replace('/[^a-z0-9\-_]/', '', strtolower(sanitize_key($theme_name)));
+        }, $remove_themes);
+
+        $normalized_themes = array_values(array_filter($normalized_themes, function ($theme) use ($remove_themes) {
+            return $theme === 'default' || !in_array($theme, $remove_themes, true);
+        }));
+
+        $styles_by_theme = isset($_POST['styles_by_theme']) && is_array($_POST['styles_by_theme'])
+            ? $_POST['styles_by_theme']
+            : [];
+
+        $previous_themes = get_option('hreflang_style_themes', ['default']);
+        if (!is_array($previous_themes)) {
+            $previous_themes = ['default'];
+        }
+
+        foreach ($normalized_themes as $theme) {
+            $raw_styles = isset($styles_by_theme[$theme]) && is_array($styles_by_theme[$theme])
+                ? $styles_by_theme[$theme]
+                : [];
+            $styles = hreflang_sanitize_switcher_styles($raw_styles);
+            update_option('hreflang_switcher_styles_' . $theme, $styles);
+
+            if ($theme === 'default') {
+                update_option('hreflang_switcher_styles', $styles);
+            }
+        }
+
+        foreach ($previous_themes as $old_theme) {
+            $old_theme = preg_replace('/[^a-z0-9\-_]/', '', strtolower(sanitize_key($old_theme)));
+            if (!empty($old_theme) && $old_theme !== 'default' && !in_array($old_theme, $normalized_themes, true)) {
+                delete_option('hreflang_switcher_styles_' . $old_theme);
+            }
+        }
+
+        update_option('hreflang_style_themes', $normalized_themes);
         echo '<div class="notice notice-success"><p>外觀設定已儲存。</p></div>';
     }
     
@@ -233,114 +294,92 @@ function hreflang_render_settings_page() {
         <hr>
 
         <h2>切換器外觀設定</h2>
-        <p>自訂語言切換器的顏色、字體與圓角。變更儲存後請重新整理前台頁面預覽效果。</p>
+        <p>可建立多組外觀，並在短碼使用 <code>[hreflang_switcher theme="組別"]</code> 指定。</p>
 
         <?php
-        $cs = function_exists('hreflang_get_switcher_styles') ? hreflang_get_switcher_styles() : [];
-        $cs = wp_parse_args($cs, [
-            'btn_bg'=>'#ffffff','btn_color'=>'#333333','btn_border'=>'#e5e5e5',
-            'btn_radius'=>'0.5rem','font_size'=>'14px',
-            'menu_bg'=>'#ffffff','menu_border'=>'#e5e5e5','link_color'=>'#333333','hover_bg'=>'#f9f9f9',
-            'active_bg'=>'#0073aa','active_color'=>'#ffffff','active_border'=>'#0073aa',
-        ]);
+        $style_themes = function_exists('hreflang_get_style_themes')
+            ? hreflang_get_style_themes()
+            : get_option('hreflang_style_themes', ['default']);
+        if (!is_array($style_themes) || empty($style_themes)) {
+            $style_themes = ['default'];
+        }
+        if (!in_array('default', $style_themes, true)) {
+            array_unshift($style_themes, 'default');
+        }
+        $style_themes = array_values(array_unique($style_themes));
         ?>
-
-        <div style="margin-bottom:1.5rem">
-            <strong>快速主題：</strong>&nbsp;
-            <button type="button" class="button hrl-theme-btn" data-theme="default">⬜ 預設</button>
-            <button type="button" class="button hrl-theme-btn" data-theme="dark">⬛ 深色</button>
-            <button type="button" class="button hrl-theme-btn" data-theme="minimal">&#9651; 極簡</button>
-            <button type="button" class="button hrl-theme-btn" data-theme="pill">&#9711; 藥丸</button>
-        </div>
 
         <form method="post" action="" id="hrl-styles-form">
             <?php wp_nonce_field('hreflang_styles_nonce'); ?>
 
-            <div style="display:flex;gap:2.5rem;flex-wrap:wrap;align-items:flex-start">
+            <table class="form-table" style="max-width:720px">
+                <tr>
+                    <th scope="row"><label for="new_theme_name">新增外觀組別</label></th>
+                    <td>
+                        <input type="text" id="new_theme_name" name="new_theme_name" placeholder="例如：dark-header" style="width:220px" />
+                        <p class="description">僅允許小寫英數、-、_。儲存後即可使用該組別。</p>
+                    </td>
+                </tr>
+            </table>
 
-                <div>
-                    <h3 style="margin-top:0">按鈕</h3>
-                    <table class="form-table" style="width:auto">
-                        <tr>
-                            <th>背景色</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_bg']); ?>"><input type="text" name="styles[btn_bg]" value="<?php echo esc_attr($cs['btn_bg']); ?>" class="hrl-hex" placeholder="#ffffff" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                        <tr>
-                            <th>文字色</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_color']); ?>"><input type="text" name="styles[btn_color]" value="<?php echo esc_attr($cs['btn_color']); ?>" class="hrl-hex" placeholder="#333333" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                        <tr>
-                            <th>邊框色</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_border']); ?>"><input type="text" name="styles[btn_border]" value="<?php echo esc_attr($cs['btn_border']); ?>" class="hrl-hex" placeholder="#e5e5e5" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                        <tr>
-                            <th>圓角</th>
-                            <td><input type="text" name="styles[btn_radius]" id="hrl-btn-radius" value="<?php echo esc_attr($cs['btn_radius']); ?>" style="width:90px" placeholder="0.5rem"><span class="description"> px / rem / 999px</span></td>
-                        </tr>
-                        <tr>
-                            <th>字體大小</th>
-                            <td><input type="text" name="styles[font_size]" id="hrl-font-size" value="<?php echo esc_attr($cs['font_size']); ?>" style="width:90px" placeholder="14px"><span class="description"> px / rem</span></td>
-                        </tr>
-                    </table>
-                </div>
+            <?php foreach ($style_themes as $theme_name) :
+                $theme_name = preg_replace('/[^a-z0-9\-_]/', '', strtolower(sanitize_key($theme_name)));
+                if (empty($theme_name)) continue;
+                $cs = function_exists('hreflang_get_switcher_styles') ? hreflang_get_switcher_styles($theme_name) : [];
+                $cs = wp_parse_args($cs, [
+                    'btn_bg'=>'#ffffff','btn_color'=>'#333333','btn_border'=>'#e5e5e5',
+                    'btn_radius'=>'0.5rem','font_size'=>'14px',
+                    'menu_bg'=>'#ffffff','menu_border'=>'#e5e5e5','link_color'=>'#333333','hover_bg'=>'#f9f9f9',
+                    'active_bg'=>'#0073aa','active_color'=>'#ffffff','active_border'=>'#0073aa',
+                ]);
+            ?>
+                <div class="hrl-theme-card">
+                    <h3>
+                        外觀組別：<code><?php echo esc_html($theme_name); ?></code>
+                        <?php if ($theme_name !== 'default') : ?>
+                            <label style="margin-left:12px;font-weight:normal">
+                                <input type="checkbox" name="remove_themes[]" value="<?php echo esc_attr($theme_name); ?>" /> 刪除此組別
+                            </label>
+                        <?php endif; ?>
+                    </h3>
+                    <p class="description" style="margin-top:-6px">
+                        使用方式：<code>[hreflang_switcher theme="<?php echo esc_attr($theme_name); ?>"]</code>
+                    </p>
+                    <input type="hidden" name="style_themes[]" value="<?php echo esc_attr($theme_name); ?>" />
 
-                <div>
-                    <h3 style="margin-top:0">下拉選單</h3>
-                    <table class="form-table" style="width:auto">
-                        <tr>
-                            <th>背景色</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['menu_bg']); ?>"><input type="text" name="styles[menu_bg]" value="<?php echo esc_attr($cs['menu_bg']); ?>" class="hrl-hex" placeholder="#ffffff" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                        <tr>
-                            <th>邊框色</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['menu_border']); ?>"><input type="text" name="styles[menu_border]" value="<?php echo esc_attr($cs['menu_border']); ?>" class="hrl-hex" placeholder="#e5e5e5" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                        <tr>
-                            <th>連結色</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['link_color']); ?>"><input type="text" name="styles[link_color]" value="<?php echo esc_attr($cs['link_color']); ?>" class="hrl-hex" placeholder="#333333" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                        <tr>
-                            <th>Hover 背景</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['hover_bg']); ?>"><input type="text" name="styles[hover_bg]" value="<?php echo esc_attr($cs['hover_bg']); ?>" class="hrl-hex" placeholder="#f9f9f9" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div>
-                    <h3 style="margin-top:0">Active 語言<small>（清單樣式）</small></h3>
-                    <table class="form-table" style="width:auto">
-                        <tr>
-                            <th>背景色</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['active_bg']); ?>"><input type="text" name="styles[active_bg]" value="<?php echo esc_attr($cs['active_bg']); ?>" class="hrl-hex" placeholder="#0073aa" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                        <tr>
-                            <th>文字色</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['active_color']); ?>"><input type="text" name="styles[active_color]" value="<?php echo esc_attr($cs['active_color']); ?>" class="hrl-hex" placeholder="#ffffff" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                        <tr>
-                            <th>邊框色</th>
-                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['active_border']); ?>"><input type="text" name="styles[active_border]" value="<?php echo esc_attr($cs['active_border']); ?>" class="hrl-hex" placeholder="#0073aa" maxlength="9" spellcheck="false"></td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div>
-                    <h3 style="margin-top:0">即時預覽</h3>
-                    <div style="padding:1.2rem;background:#f0f0f1;border-radius:4px;min-width:180px">
-                        <div id="hrl-preview-switcher" style="display:inline-block;position:relative">
-                            <button id="hrl-preview-btn" type="button" style="cursor:default">
-                                繁體中文 ▾
-                            </button>
-                            <ul id="hrl-preview-menu" style="list-style:none;padding:.25rem 0;margin:.25rem 0 0;min-width:10rem">
-                                <li><a id="hrl-preview-a1" href="#" onclick="return false" style="display:block;padding:.5rem .75rem;text-decoration:none">English</a></li>
-                                <li><a id="hrl-preview-a2" href="#" onclick="return false" style="display:block;padding:.5rem .75rem;text-decoration:none">日本語</a></li>
-                            </ul>
+                    <div class="hrl-style-grid">
+                        <div>
+                            <h4>按鈕</h4>
+                            <table class="form-table" style="width:auto">
+                                <tr><th>背景色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_bg']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][btn_bg]" value="<?php echo esc_attr($cs['btn_bg']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                                <tr><th>文字色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_color']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][btn_color]" value="<?php echo esc_attr($cs['btn_color']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                                <tr><th>邊框色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_border']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][btn_border]" value="<?php echo esc_attr($cs['btn_border']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                                <tr><th>圓角</th><td><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][btn_radius]" value="<?php echo esc_attr($cs['btn_radius']); ?>" style="width:90px" placeholder="0.5rem"></td></tr>
+                                <tr><th>字體大小</th><td><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][font_size]" value="<?php echo esc_attr($cs['font_size']); ?>" style="width:90px" placeholder="14px"></td></tr>
+                            </table>
                         </div>
-                        <p style="margin:.75rem 0 0;font-size:11px;color:#666">下拉選單（已展開）預覽</p>
+
+                        <div>
+                            <h4>下拉選單</h4>
+                            <table class="form-table" style="width:auto">
+                                <tr><th>背景色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['menu_bg']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][menu_bg]" value="<?php echo esc_attr($cs['menu_bg']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                                <tr><th>邊框色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['menu_border']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][menu_border]" value="<?php echo esc_attr($cs['menu_border']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                                <tr><th>連結色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['link_color']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][link_color]" value="<?php echo esc_attr($cs['link_color']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                                <tr><th>Hover 背景</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['hover_bg']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][hover_bg]" value="<?php echo esc_attr($cs['hover_bg']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                            </table>
+                        </div>
+
+                        <div>
+                            <h4>Active 語言（清單樣式）</h4>
+                            <table class="form-table" style="width:auto">
+                                <tr><th>背景色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['active_bg']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][active_bg]" value="<?php echo esc_attr($cs['active_bg']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                                <tr><th>文字色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['active_color']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][active_color]" value="<?php echo esc_attr($cs['active_color']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                                <tr><th>邊框色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['active_border']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][active_border]" value="<?php echo esc_attr($cs['active_border']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                            </table>
+                        </div>
                     </div>
                 </div>
-
-            </div>
+            <?php endforeach; ?>
 
             <?php submit_button('儲存外觀設定', 'secondary', 'hreflang_save_styles', false); ?>
         </form>
@@ -352,7 +391,7 @@ function hreflang_render_settings_page() {
             <li>設定您網站支援的所有語言版本</li>
             <li>在文章/頁面編輯時，填寫各語言的對應 URL（使用 ACF 欄位或自訂欄位）</li>
             <li>在分類/標籤編輯頁面，填寫對應語言的 URL</li>
-            <li>使用短碼 <code>[hreflang_switcher]</code> 在前端顯示語言切換器</li>
+            <li>使用短碼 <code>[hreflang_switcher]</code> 顯示預設外觀，或 <code>[hreflang_switcher theme="dark-header"]</code> 指定外觀組別</li>
         </ol>
     </div>
     
@@ -384,60 +423,9 @@ function hreflang_render_settings_page() {
 
     <script>
     (function ($) {
-        var themes = {
-            'default': {btn_bg:'#ffffff',btn_color:'#333333',btn_border:'#e5e5e5',menu_bg:'#ffffff',menu_border:'#e5e5e5',link_color:'#333333',hover_bg:'#f9f9f9',active_bg:'#0073aa',active_color:'#ffffff',active_border:'#0073aa',btn_radius:'0.5rem',font_size:'14px'},
-            'dark':    {btn_bg:'#1e1e1e',btn_color:'#ffffff',btn_border:'#444444',menu_bg:'#2d2d2d',menu_border:'#444444',link_color:'#eeeeee',hover_bg:'#3a3a3a',active_bg:'#4a9eda',active_color:'#ffffff',active_border:'#4a9eda',btn_radius:'0.5rem',font_size:'14px'},
-            'minimal': {btn_bg:'#ffffff',btn_color:'#555555',btn_border:'#ffffff',menu_bg:'#ffffff',menu_border:'#dddddd',link_color:'#555555',hover_bg:'#f5f5f5',active_bg:'#f0f0f0',active_color:'#333333',active_border:'#cccccc',btn_radius:'0px',font_size:'14px'},
-            'pill':    {btn_bg:'#0073aa',btn_color:'#ffffff',btn_border:'#005a87',menu_bg:'#ffffff',menu_border:'#e5e5e5',link_color:'#333333',hover_bg:'#eaf4fb',active_bg:'#0073aa',active_color:'#ffffff',active_border:'#005a87',btn_radius:'999px',font_size:'14px'}
-        };
-
-        function updatePreview() {
-            var btn  = document.getElementById('hrl-preview-btn');
-            var menu = document.getElementById('hrl-preview-menu');
-            if (!btn || !menu) return;
-            var bg     = $('[name="styles[btn_bg]"]').val()     || '#ffffff';
-            var color  = $('[name="styles[btn_color]"]').val()  || '#333333';
-            var border = $('[name="styles[btn_border]"]').val() || '#e5e5e5';
-            var radius = $('#hrl-btn-radius').val()             || '0.5rem';
-            var fs     = $('#hrl-font-size').val()              || '14px';
-            var menuBg = $('[name="styles[menu_bg]"]').val()    || '#ffffff';
-            var menuBd = $('[name="styles[menu_border]"]').val()|| '#e5e5e5';
-            var lc     = $('[name="styles[link_color]"]').val() || '#333333';
-            var hv     = $('[name="styles[hover_bg]"]').val()   || '#f9f9f9';
-
-            btn.style.cssText  = 'cursor:default;padding:.5rem 1rem;border:1px solid '+border+';border-radius:'+radius+';background:'+bg+';color:'+color+';font-size:'+fs;
-            menu.style.cssText = 'list-style:none;padding:.25rem 0;margin:.25rem 0 0;min-width:10rem;border:1px solid '+menuBd+';background:'+menuBg;
-            $('#hrl-preview-menu a').each(function() {
-                $(this).css({color: lc, fontSize: fs});
-                $(this).off('mouseenter mouseleave');
-                $(this).on('mouseenter', function(){ $(this).css('background', hv); });
-                $(this).on('mouseleave', function(){ $(this).css('background', ''); });
-            });
-        }
-
-        $(document).on('click', '.hrl-theme-btn', function () {
-            var key = $(this).data('theme');
-            var t   = themes[key];
-            if (!t) return;
-            $.each(t, function (k, v) {
-                var el = $('[name="styles[' + k + ']"]');
-                if (el.length) {
-                    el.val(v);
-                    // 同步更新旁邊的顏色選擇器
-                    if (el.hasClass('hrl-hex')) {
-                        el.siblings('.hrl-color').val(v);
-                    }
-                }
-            });
-            if (t.btn_radius) $('#hrl-btn-radius').val(t.btn_radius);
-            if (t.font_size)  $('#hrl-font-size').val(t.font_size);
-            updatePreview();
-        });
-
         // 顏色選擇器 → 文字欄位（雙向同步）
         $(document).on('input', '.hrl-color', function () {
             $(this).siblings('.hrl-hex').val($(this).val());
-            updatePreview();
         });
 
         // 文字欄位 → 顏色選擇器（輸入合法 hex 才同步）
@@ -446,11 +434,7 @@ function hreflang_render_settings_page() {
             if (/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(v)) {
                 $(this).siblings('.hrl-color').val(v.slice(0, 7));
             }
-            updatePreview();
         });
-
-        $(document).on('input change', '#hrl-btn-radius, #hrl-font-size', updatePreview);
-        $(document).ready(updatePreview);
     }(jQuery));
     </script>
     
@@ -465,9 +449,9 @@ function hreflang_render_settings_page() {
     .hrl-hex:focus { outline:none; border-color:#007cba; box-shadow:0 0 0 1px #007cba; z-index:1; position:relative; }
     #hrl-styles-form .form-table th { width:110px; font-weight:600; padding:8px 10px 8px 0; white-space:nowrap; vertical-align:middle; }
     #hrl-styles-form .form-table td { padding:6px 0; vertical-align:middle; }
-    .hrl-theme-btn { margin-right:6px !important; }
-    #hrl-preview-btn { border: 1px solid #e5e5e5; background: #fff; }
-    #hrl-preview-menu { border: 1px solid #e5e5e5; background: #fff; }
+    .hrl-theme-card { margin:16px 0 24px; padding:16px; border:1px solid #dcdcde; border-radius:4px; background:#fff; }
+    .hrl-theme-card h3 { margin-top:0; margin-bottom:6px; }
+    .hrl-style-grid { display:flex; gap:2rem; flex-wrap:wrap; align-items:flex-start; }
     </style>
     <?php
 }
