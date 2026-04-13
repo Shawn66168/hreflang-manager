@@ -72,6 +72,44 @@ function hreflang_sanitize_languages($input) {
 }
 
 /**
+ * 清理切換器外觀設定
+ * 只允許 hex 顏色（#rrggbb）與安全的 CSS 尺寸值
+ */
+function hreflang_sanitize_switcher_styles($input) {
+    if (!is_array($input)) {
+        return [];
+    }
+    $sanitized = [];
+
+    $color_fields = ['btn_bg', 'btn_color', 'btn_border', 'menu_bg', 'menu_border',
+                     'link_color', 'hover_bg', 'active_bg', 'active_color', 'active_border'];
+    foreach ($color_fields as $field) {
+        if (isset($input[$field])) {
+            $val = sanitize_text_field($input[$field]);
+            if (preg_match('/^#[0-9a-fA-F]{3,8}$/', $val)) {
+                $sanitized[$field] = strtolower($val);
+            }
+        }
+    }
+
+    if (isset($input['btn_radius'])) {
+        $val = sanitize_text_field($input['btn_radius']);
+        if (preg_match('/^\d+(\.\d+)?(px|rem|em|%)?$/', $val)) {
+            $sanitized['btn_radius'] = $val;
+        }
+    }
+
+    if (isset($input['font_size'])) {
+        $val = sanitize_text_field($input['font_size']);
+        if (preg_match('/^\d+(\.\d+)?(px|rem|em|pt)?$/', $val)) {
+            $sanitized['font_size'] = $val;
+        }
+    }
+
+    return $sanitized;
+}
+
+/**
  * 渲染設定頁面
  */
 function hreflang_render_settings_page() {
@@ -100,6 +138,13 @@ function hreflang_render_settings_page() {
         update_option('hreflang_default_lang', sanitize_text_field($_POST['default_lang'] ?? 'en'));
         
         echo '<div class="notice notice-success"><p>設定已儲存。</p></div>';
+    }
+
+    // 處理外觀設定儲存
+    if (isset($_POST['hreflang_save_styles']) && check_admin_referer('hreflang_styles_nonce')) {
+        $styles = hreflang_sanitize_switcher_styles($_POST['styles'] ?? []);
+        update_option('hreflang_switcher_styles', $styles);
+        echo '<div class="notice notice-success"><p>外觀設定已儲存。</p></div>';
     }
     
     $languages = get_option('hreflang_languages', []);
@@ -186,6 +231,121 @@ function hreflang_render_settings_page() {
         </form>
         
         <hr>
+
+        <h2>切換器外觀設定</h2>
+        <p>自訂語言切換器的顏色、字體與圓角。變更儲存後請重新整理前台頁面預覽效果。</p>
+
+        <?php
+        $cs = function_exists('hreflang_get_switcher_styles') ? hreflang_get_switcher_styles() : [];
+        $cs = wp_parse_args($cs, [
+            'btn_bg'=>'#ffffff','btn_color'=>'#333333','btn_border'=>'#e5e5e5',
+            'btn_radius'=>'0.5rem','font_size'=>'14px',
+            'menu_bg'=>'#ffffff','menu_border'=>'#e5e5e5','link_color'=>'#333333','hover_bg'=>'#f9f9f9',
+            'active_bg'=>'#0073aa','active_color'=>'#ffffff','active_border'=>'#0073aa',
+        ]);
+        ?>
+
+        <div style="margin-bottom:1.5rem">
+            <strong>快速主題：</strong>&nbsp;
+            <button type="button" class="button hrl-theme-btn" data-theme="default">⬜ 預設</button>
+            <button type="button" class="button hrl-theme-btn" data-theme="dark">⬛ 深色</button>
+            <button type="button" class="button hrl-theme-btn" data-theme="minimal">&#9651; 極簡</button>
+            <button type="button" class="button hrl-theme-btn" data-theme="pill">&#9711; 藥丸</button>
+        </div>
+
+        <form method="post" action="" id="hrl-styles-form">
+            <?php wp_nonce_field('hreflang_styles_nonce'); ?>
+
+            <div style="display:flex;gap:2.5rem;flex-wrap:wrap;align-items:flex-start">
+
+                <div>
+                    <h3 style="margin-top:0">按鈕</h3>
+                    <table class="form-table" style="width:auto">
+                        <tr>
+                            <th>背景色</th>
+                            <td><input type="color" name="styles[btn_bg]" value="<?php echo esc_attr($cs['btn_bg']); ?>" class="hrl-color"></td>
+                        </tr>
+                        <tr>
+                            <th>文字色</th>
+                            <td><input type="color" name="styles[btn_color]" value="<?php echo esc_attr($cs['btn_color']); ?>" class="hrl-color"></td>
+                        </tr>
+                        <tr>
+                            <th>邊框色</th>
+                            <td><input type="color" name="styles[btn_border]" value="<?php echo esc_attr($cs['btn_border']); ?>" class="hrl-color"></td>
+                        </tr>
+                        <tr>
+                            <th>圓角</th>
+                            <td><input type="text" name="styles[btn_radius]" id="hrl-btn-radius" value="<?php echo esc_attr($cs['btn_radius']); ?>" style="width:90px" placeholder="0.5rem"><span class="description"> px / rem / 999px</span></td>
+                        </tr>
+                        <tr>
+                            <th>字體大小</th>
+                            <td><input type="text" name="styles[font_size]" id="hrl-font-size" value="<?php echo esc_attr($cs['font_size']); ?>" style="width:90px" placeholder="14px"><span class="description"> px / rem</span></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div>
+                    <h3 style="margin-top:0">下拉選單</h3>
+                    <table class="form-table" style="width:auto">
+                        <tr>
+                            <th>背景色</th>
+                            <td><input type="color" name="styles[menu_bg]" value="<?php echo esc_attr($cs['menu_bg']); ?>" class="hrl-color"></td>
+                        </tr>
+                        <tr>
+                            <th>邊框色</th>
+                            <td><input type="color" name="styles[menu_border]" value="<?php echo esc_attr($cs['menu_border']); ?>" class="hrl-color"></td>
+                        </tr>
+                        <tr>
+                            <th>連結色</th>
+                            <td><input type="color" name="styles[link_color]" value="<?php echo esc_attr($cs['link_color']); ?>" class="hrl-color"></td>
+                        </tr>
+                        <tr>
+                            <th>Hover 背景</th>
+                            <td><input type="color" name="styles[hover_bg]" value="<?php echo esc_attr($cs['hover_bg']); ?>" class="hrl-color"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div>
+                    <h3 style="margin-top:0">Active 語言<small>（清單樣式）</small></h3>
+                    <table class="form-table" style="width:auto">
+                        <tr>
+                            <th>背景色</th>
+                            <td><input type="color" name="styles[active_bg]" value="<?php echo esc_attr($cs['active_bg']); ?>" class="hrl-color"></td>
+                        </tr>
+                        <tr>
+                            <th>文字色</th>
+                            <td><input type="color" name="styles[active_color]" value="<?php echo esc_attr($cs['active_color']); ?>" class="hrl-color"></td>
+                        </tr>
+                        <tr>
+                            <th>邊框色</th>
+                            <td><input type="color" name="styles[active_border]" value="<?php echo esc_attr($cs['active_border']); ?>" class="hrl-color"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div>
+                    <h3 style="margin-top:0">即時預覽</h3>
+                    <div style="padding:1.2rem;background:#f0f0f1;border-radius:4px;min-width:180px">
+                        <div id="hrl-preview-switcher" style="display:inline-block;position:relative">
+                            <button id="hrl-preview-btn" type="button" style="cursor:default">
+                                繁體中文 ▾
+                            </button>
+                            <ul id="hrl-preview-menu" style="list-style:none;padding:.25rem 0;margin:.25rem 0 0;min-width:10rem">
+                                <li><a id="hrl-preview-a1" href="#" onclick="return false" style="display:block;padding:.5rem .75rem;text-decoration:none">English</a></li>
+                                <li><a id="hrl-preview-a2" href="#" onclick="return false" style="display:block;padding:.5rem .75rem;text-decoration:none">日本語</a></li>
+                            </ul>
+                        </div>
+                        <p style="margin:.75rem 0 0;font-size:11px;color:#666">下拉選單（已展開）預覽</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <?php submit_button('儲存外觀設定', 'secondary', 'hreflang_save_styles', false); ?>
+        </form>
+
+        <hr>
         
         <h2>使用說明</h2>
         <ol>
@@ -221,6 +381,57 @@ function hreflang_render_settings_page() {
         });
     });
     </script>
+
+    <script>
+    (function ($) {
+        var themes = {
+            'default': {btn_bg:'#ffffff',btn_color:'#333333',btn_border:'#e5e5e5',menu_bg:'#ffffff',menu_border:'#e5e5e5',link_color:'#333333',hover_bg:'#f9f9f9',active_bg:'#0073aa',active_color:'#ffffff',active_border:'#0073aa',btn_radius:'0.5rem',font_size:'14px'},
+            'dark':    {btn_bg:'#1e1e1e',btn_color:'#ffffff',btn_border:'#444444',menu_bg:'#2d2d2d',menu_border:'#444444',link_color:'#eeeeee',hover_bg:'#3a3a3a',active_bg:'#4a9eda',active_color:'#ffffff',active_border:'#4a9eda',btn_radius:'0.5rem',font_size:'14px'},
+            'minimal': {btn_bg:'#ffffff',btn_color:'#555555',btn_border:'#ffffff',menu_bg:'#ffffff',menu_border:'#dddddd',link_color:'#555555',hover_bg:'#f5f5f5',active_bg:'#f0f0f0',active_color:'#333333',active_border:'#cccccc',btn_radius:'0px',font_size:'14px'},
+            'pill':    {btn_bg:'#0073aa',btn_color:'#ffffff',btn_border:'#005a87',menu_bg:'#ffffff',menu_border:'#e5e5e5',link_color:'#333333',hover_bg:'#eaf4fb',active_bg:'#0073aa',active_color:'#ffffff',active_border:'#005a87',btn_radius:'999px',font_size:'14px'}
+        };
+
+        function updatePreview() {
+            var btn  = document.getElementById('hrl-preview-btn');
+            var menu = document.getElementById('hrl-preview-menu');
+            if (!btn || !menu) return;
+            var bg     = $('[name="styles[btn_bg]"]').val()     || '#ffffff';
+            var color  = $('[name="styles[btn_color]"]').val()  || '#333333';
+            var border = $('[name="styles[btn_border]"]').val() || '#e5e5e5';
+            var radius = $('#hrl-btn-radius').val()             || '0.5rem';
+            var fs     = $('#hrl-font-size').val()              || '14px';
+            var menuBg = $('[name="styles[menu_bg]"]').val()    || '#ffffff';
+            var menuBd = $('[name="styles[menu_border]"]').val()|| '#e5e5e5';
+            var lc     = $('[name="styles[link_color]"]').val() || '#333333';
+            var hv     = $('[name="styles[hover_bg]"]').val()   || '#f9f9f9';
+
+            btn.style.cssText  = 'cursor:default;padding:.5rem 1rem;border:1px solid '+border+';border-radius:'+radius+';background:'+bg+';color:'+color+';font-size:'+fs;
+            menu.style.cssText = 'list-style:none;padding:.25rem 0;margin:.25rem 0 0;min-width:10rem;border:1px solid '+menuBd+';background:'+menuBg;
+            $('#hrl-preview-menu a').each(function() {
+                $(this).css({color: lc, fontSize: fs});
+                $(this).off('mouseenter mouseleave');
+                $(this).on('mouseenter', function(){ $(this).css('background', hv); });
+                $(this).on('mouseleave', function(){ $(this).css('background', ''); });
+            });
+        }
+
+        $(document).on('click', '.hrl-theme-btn', function () {
+            var key = $(this).data('theme');
+            var t   = themes[key];
+            if (!t) return;
+            $.each(t, function (k, v) {
+                var el = $('[name="styles[' + k + ']"]');
+                if (el.length) el.val(v);
+            });
+            if (t.btn_radius) $('#hrl-btn-radius').val(t.btn_radius);
+            if (t.font_size)  $('#hrl-font-size').val(t.font_size);
+            updatePreview();
+        });
+
+        $(document).on('input change', '.hrl-color, #hrl-btn-radius, #hrl-font-size', updatePreview);
+        $(document).ready(updatePreview);
+    }(jQuery));
+    </script>
     
     <style>
     .language-row input[type="text"],
@@ -228,6 +439,12 @@ function hreflang_render_settings_page() {
         width: 100%;
         max-width: 200px;
     }
+    .hrl-color { width:50px; height:32px; padding:2px; cursor:pointer; border:1px solid #ddd; border-radius:3px; vertical-align:middle; }
+    #hrl-styles-form .form-table th { width:110px; font-weight:600; padding:8px 10px 8px 0; white-space:nowrap; vertical-align:middle; }
+    #hrl-styles-form .form-table td { padding:6px 0; vertical-align:middle; }
+    .hrl-theme-btn { margin-right:6px !important; }
+    #hrl-preview-btn { border: 1px solid #e5e5e5; background: #fff; }
+    #hrl-preview-menu { border: 1px solid #e5e5e5; background: #fff; }
     </style>
     <?php
 }

@@ -155,27 +155,61 @@ function hreflang_switcher_shortcode($atts) {
 }
 
 /**
- * 載入語言切換器的 CSS（inline 注入）
+ * 取得切換器外觀設定（含預設值）
+ *
+ * @return array
+ */
+function hreflang_get_switcher_styles() {
+    $defaults = [
+        'btn_bg'        => '#ffffff',
+        'btn_color'     => '#333333',
+        'btn_border'    => '#e5e5e5',
+        'btn_radius'    => '0.5rem',
+        'font_size'     => '14px',
+        'menu_bg'       => '#ffffff',
+        'menu_border'   => '#e5e5e5',
+        'link_color'    => '#333333',
+        'hover_bg'      => '#f9f9f9',
+        'active_bg'     => '#0073aa',
+        'active_color'  => '#ffffff',
+        'active_border' => '#0073aa',
+    ];
+    $saved = get_option('hreflang_switcher_styles', []);
+    return wp_parse_args(is_array($saved) ? $saved : [], $defaults);
+}
+
+/**
+ * 載入語言切換器的 CSS（inline 注入，套用外觀設定）
  */
 function hreflang_enqueue_switcher_styles() {
     wp_register_style('hreflang-inline-base', false);
     wp_enqueue_style('hreflang-inline-base');
 
+    $s = hreflang_get_switcher_styles();
+
+    // 防禦性清理：只允許 CSS 安全字元
+    foreach ($s as $k => $v) {
+        $s[$k] = preg_replace('/[^a-zA-Z0-9#.,()%\-_ \/]/', '', (string) $v);
+    }
+
+    $r = $s['btn_radius'];
+    $f = $s['font_size'];
+
     $css  = '.pww-navlang{position:relative;display:inline-block}';
-    $css .= '.pww-navlang__btn{cursor:pointer;padding:.5rem 1rem;border:1px solid #e5e5e5;border-radius:.5rem;background:#fff;font-size:14px}';
-    $css .= '.pww-navlang__btn:hover{background:#f9f9f9}';
-    $css .= '.pww-navlang__menu{display:none;position:absolute;right:0;z-index:9999;background:#fff;border:1px solid #e5e5e5;border-radius:.5rem;padding:.25rem 0;min-width:10rem;margin-top:.25rem;list-style:none}';
+    $css .= ".pww-navlang__btn{cursor:pointer;padding:.5rem 1rem;border:1px solid {$s['btn_border']};border-radius:{$r};background:{$s['btn_bg']};color:{$s['btn_color']};font-size:{$f}}";
+    $css .= ".pww-navlang__btn:hover{background:{$s['hover_bg']}}";
+    $css .= ".pww-navlang__menu{display:none;position:absolute;right:0;z-index:9999;background:{$s['menu_bg']};border:1px solid {$s['menu_border']};border-radius:{$r};padding:.25rem 0;min-width:10rem;margin-top:.25rem;list-style:none}";
     $css .= '.pww-navlang__menu.is-open{display:block}';
     $css .= '.pww-navlang__menu li{list-style:none;margin:0;padding:0}';
-    $css .= '.pww-navlang__menu a{display:block;padding:.5rem .75rem;text-decoration:none;color:#333}';
-    $css .= '.pww-navlang__menu a:hover{background:rgba(0,0,0,.04)}';
+    $css .= ".pww-navlang__menu a{display:block;padding:.5rem .75rem;text-decoration:none;color:{$s['link_color']};font-size:{$f}}";
+    $css .= ".pww-navlang__menu a:hover{background:{$s['hover_bg']}}";
 
     // 清單樣式
     $css .= '.hreflang-lang-switcher.hreflang-list{list-style:none;margin:10px 0;padding:0;display:flex;flex-wrap:wrap;gap:10px}';
     $css .= '.hreflang-lang-item{display:inline-block}';
-    $css .= '.hreflang-lang-link{display:inline-block;padding:8px 16px;border:1px solid #ddd;border-radius:4px;background-color:#fff;color:#333;text-decoration:none;font-size:14px;transition:all .3s ease}';
-    $css .= '.hreflang-lang-link:hover{background-color:#f5f5f5;border-color:#999;color:#000}';
-    $css .= '.hreflang-lang-item.active .hreflang-lang-link{background-color:#0073aa;border-color:#0073aa;color:#fff;font-weight:bold}';
+    $css .= ".hreflang-lang-link{display:inline-block;padding:8px 16px;border:1px solid {$s['btn_border']};border-radius:{$r};background-color:{$s['btn_bg']};color:{$s['btn_color']};text-decoration:none;font-size:{$f};transition:all .3s ease}";
+    $css .= ".hreflang-lang-link:hover{background-color:{$s['hover_bg']};border-color:#999}";
+    $css .= ".hreflang-lang-item.active .hreflang-lang-link{background-color:{$s['active_bg']};border-color:{$s['active_border']};color:{$s['active_color']};font-weight:bold}";
 
     wp_add_inline_style('hreflang-inline-base', $css);
 }
