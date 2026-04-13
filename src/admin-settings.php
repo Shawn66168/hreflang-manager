@@ -1,17 +1,17 @@
 <?php
 /**
- * Admin Settings Page - 敺閮剖??
+ * Admin Settings Page - 後台設定頁面
  * 
  * @package Hreflang_Manager
  */
 
-// 憒??湔閮芸?甇斗?獢????
+// 如果直接訪問此檔案則退出
 if (!defined('ABSPATH')) {
     exit;
 }
 
 /**
- * 閮餃?閮剖??
+ * 註冊設定頁面
  */
 function hreflang_add_settings_page() {
     add_options_page(
@@ -25,7 +25,7 @@ function hreflang_add_settings_page() {
 add_action('admin_menu', 'hreflang_add_settings_page');
 
 /**
- * 閮餃?閮剖??賊?
+ * 註冊設定選項
  */
 function hreflang_register_settings() {
     register_setting('hreflang_options', 'hreflang_languages', [
@@ -39,7 +39,7 @@ function hreflang_register_settings() {
 add_action('admin_init', 'hreflang_register_settings');
 
 /**
- * 皜?隤?鞈?
+ * 清理語言資料
  */
 function hreflang_sanitize_languages($input) {
     if (!is_array($input)) {
@@ -63,7 +63,7 @@ function hreflang_sanitize_languages($input) {
         ];
     }
     
-    // ??order ??
+    // 按 order 排序
     usort($sanitized, function($a, $b) {
         return $a['order'] - $b['order'];
     });
@@ -72,14 +72,14 @@ function hreflang_sanitize_languages($input) {
 }
 
 /**
- * 皜脫?閮剖??
+ * 渲染設定頁面
  */
 function hreflang_render_settings_page() {
     if (!current_user_can('manage_options')) {
         return;
     }
     
-    // ??銵典?漱
+    // 處理表單提交
     if (isset($_POST['hreflang_save_languages']) && check_admin_referer('hreflang_languages_nonce')) {
         $languages = [];
         
@@ -99,7 +99,7 @@ function hreflang_render_settings_page() {
         update_option('hreflang_languages', $languages);
         update_option('hreflang_default_lang', sanitize_text_field($_POST['default_lang'] ?? 'en'));
         
-        echo '<div class="notice notice-success"><p>閮剖?撌脣摮?/p></div>';
+        echo '<div class="notice notice-success"><p>設定已儲存。</p></div>';
     }
     
     $languages = get_option('hreflang_languages', []);
@@ -107,7 +107,7 @@ function hreflang_render_settings_page() {
     
     ?>
     <div class="wrap">
-        <h1>Hreflang 隤?閮剖?</h1>
+        <h1>Hreflang 語言設定</h1>
         
         <form method="post" action="">
             <?php wp_nonce_field('hreflang_languages_nonce'); ?>
@@ -115,13 +115,13 @@ function hreflang_render_settings_page() {
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
-                        <th>??</th>
-                        <th>隤?隞?Ⅳ</th>
+                        <th>順序</th>
+                        <th>語言代碼</th>
                         <th>Locale</th>
                         <th>Domain</th>
-                        <th>憿舐內?迂</th>
-                        <th>?</th>
-                        <th>??</th>
+                        <th>顯示名稱</th>
+                        <th>啟用</th>
+                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="languages-list">
@@ -158,41 +158,41 @@ function hreflang_render_settings_page() {
                                            <?php checked($lang['active']); ?> />
                                 </td>
                                 <td>
-                                    <button type="button" class="button remove-language">蝘駁</button>
+                                    <button type="button" class="button remove-language">移除</button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="7">撠閮剖?隤?嚗?暺?銝?憓?閮????/td>
+                            <td colspan="7">尚未設定語言，請點擊下方「新增語言」按鈕。</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
             </table>
             
             <p>
-                <button type="button" class="button" id="add-language">?啣?隤?</button>
+                <button type="button" class="button" id="add-language">新增語言</button>
             </p>
             
-            <h2>?身隤?</h2>
+            <h2>預設語言</h2>
             <p>
-                <label for="default_lang">?身隤?隞?Ⅳ嚗??x-default嚗?</label>
+                <label for="default_lang">預設語言代碼（用於 x-default）：</label>
                 <input type="text" id="default_lang" name="default_lang" 
                        value="<?php echo esc_attr($default_lang); ?>" 
                        placeholder="en" />
             </p>
             
-            <?php submit_button('?脣?閮剖?', 'primary', 'hreflang_save_languages'); ?>
+            <?php submit_button('儲存設定', 'primary', 'hreflang_save_languages'); ?>
         </form>
         
         <hr>
         
-        <h2>雿輻隤芣?</h2>
+        <h2>使用說明</h2>
         <ol>
-            <li>閮剖??函雯蝡?渡????閮?</li>
-            <li>?冽?蝡??蝺刻摩??憛怠神??閮????URL嚗蝙??ACF 甈??閮?雿?</li>
-            <li>?典?憿?璅惜蝺刻摩?嚗‵撖怠???閮??URL</li>
-            <li>雿輻?剔Ⅳ <code>[hreflang_switcher]</code> ?典?蝡舫＊蝷箄?閮????/li>
+            <li>設定您網站支援的所有語言版本</li>
+            <li>在文章/頁面編輯時，填寫各語言的對應 URL（使用 ACF 欄位或自訂欄位）</li>
+            <li>在分類/標籤編輯頁面，填寫對應語言的 URL</li>
+            <li>使用短碼 <code>[hreflang_switcher]</code> 在前端顯示語言切換器</li>
         </ol>
     </div>
     
@@ -209,7 +209,7 @@ function hreflang_render_settings_page() {
                     <td><input type="text" name="languages[${langIndex}][domain]" placeholder="example.com" style="width: 200px;" /></td>
                     <td><input type="text" name="languages[${langIndex}][label]" placeholder="English" /></td>
                     <td><input type="checkbox" name="languages[${langIndex}][active]" checked /></td>
-                    <td><button type="button" class="button remove-language">蝘駁</button></td>
+                    <td><button type="button" class="button remove-language">移除</button></td>
                 </tr>
             `;
             $('#languages-list').append(row);

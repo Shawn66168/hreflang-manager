@@ -5,15 +5,15 @@
  * @package Hreflang_Manager
  */
 
-// 憒??湔閮芸?甇斗?獢????
+// 如果直接訪問此檔案則退出
 if (!defined('ABSPATH')) {
     exit;
 }
 
 /**
- * ??憭?閮剖???閮皜
+ * 取得外掛設定的語言清單
  * 
- * @return array 隤????
+ * @return array 語言陣列
  */
 function hreflang_get_languages() {
     $default_languages = [
@@ -29,7 +29,7 @@ function hreflang_get_languages() {
             'code' => 'zh-Hant',
             'locale' => 'zh-Hant',
             'domain' => get_site_url(),
-            'label' => '蝜?銝剜?',
+            'label' => '繁體中文',
             'active' => true,
             'order' => 2
         ]
@@ -37,22 +37,22 @@ function hreflang_get_languages() {
     
     $languages = get_option('hreflang_languages', $default_languages);
     
-    // ?迂?蕪?其耨?寡?閮皜
+    // 允許過濾器修改語言清單
     return apply_filters('hreflang_languages', $languages);
 }
 
 /**
- * ???嗅??????閮撠? URL
+ * 取得當前頁面的所有語言對應 URL
  * 
- * @return array 隤?隞?Ⅳ => URL ?????
+ * @return array 語言代碼 => URL 的對應陣列
  */
 function hreflang_get_alternate_urls() {
     $urls = [];
     $languages = hreflang_get_languages();
     
-    // ?斗?嗅??憿?
+    // 判斷當前頁面類型
     if (is_singular()) {
-        // ??????
+        // 文章或頁面
         $post_id = get_the_ID();
         foreach ($languages as $lang) {
             if (!$lang['active']) continue;
@@ -65,7 +65,7 @@ function hreflang_get_alternate_urls() {
             }
         }
     } elseif (is_category() || is_tag() || is_tax()) {
-        // ????蝐斗??芸?蝢拙?憿?
+        // 分類、標籤或自定義分類
         $term = get_queried_object();
         if ($term) {
             foreach ($languages as $lang) {
@@ -80,35 +80,35 @@ function hreflang_get_alternate_urls() {
             }
         }
     } elseif (is_home() || is_front_page()) {
-        // 擐?
+        // 首頁
         foreach ($languages as $lang) {
             if (!$lang['active']) continue;
             $urls[$lang['code']] = trailingslashit($lang['domain']);
         }
     } elseif (is_search()) {
-        // ????
+        // 搜尋頁
         $search_query = get_search_query();
         foreach ($languages as $lang) {
             if (!$lang['active']) continue;
             $urls[$lang['code']] = trailingslashit($lang['domain']) . '?s=' . urlencode($search_query);
         }
     } elseif (is_archive()) {
-        // ?嗡? archive ?
+        // 其他 archive 頁面
         $current_url = hreflang_get_current_url();
         foreach ($languages as $lang) {
             if (!$lang['active']) continue;
-            // 蝪∪?摩嚗蝙?函?楝敺?
+            // 簡單邏輯：使用當前路徑
             $urls[$lang['code']] = trailingslashit($lang['domain']) . ltrim(parse_url($current_url, PHP_URL_PATH), '/');
         }
     }
     
-    // ?迂?蕪?其耨??URL ?”
+    // 允許過濾器修改 URL 列表
     return apply_filters('hreflang_alternate_urls', $urls, get_queried_object());
 }
 
 /**
- * 甇????URL嚗Ⅱ靽?https?railing slash嚗?
- * 靽? query string ??fragment
+ * 正規化 URL（確保 https、trailing slash）
+ * 保留 query string 和 fragment
  * 
  * @param string $url
  * @return string
@@ -116,7 +116,7 @@ function hreflang_get_alternate_urls() {
 function hreflang_normalize_url($url) {
     if (!$url) return '';
     
-    // 蝣箔?雿輻 https
+    // 確保使用 https
     $url = set_url_scheme($url, 'https');
     
     $parsed = wp_parse_url($url);
@@ -130,7 +130,7 @@ function hreflang_normalize_url($url) {
     $query  = isset($parsed['query']) ? ('?' . $parsed['query']) : '';
     $fragment = isset($parsed['fragment']) ? ('#' . $parsed['fragment']) : '';
     
-    // 蝣箔? path 隞?/ ?銝衣?撠?
+    // 確保 path 以 / 開頭並結尾
     $path = '/' . ltrim($path, '/');
     $path = trailingslashit($path);
     
@@ -138,8 +138,8 @@ function hreflang_normalize_url($url) {
 }
 
 /**
- * ???嗅????canonical URL嚗?隡?canonical tag ??頛荔?
- * ?舀????撠rchive 蝑?蝔桅??ａ???
+ * 取得當前頁面的 canonical URL（類似 canonical tag 的邏輯）
+ * 支援分頁、搜尋、archive 等各種頁面類型
  * 
  * @return string
  */
@@ -156,7 +156,7 @@ function hreflang_get_current_url() {
         $term = get_queried_object();
         $url = (!is_wp_error($term) && $term) ? get_term_link($term) : home_url('/');
     } elseif (is_search()) {
-        // 銝蝙??urlencode嚗dd_query_arg ????
+        // 不使用 urlencode，add_query_arg 會處理
         $url = add_query_arg('s', get_search_query(), home_url('/'));
     } else {
         global $wp;
@@ -164,14 +164,14 @@ function hreflang_get_current_url() {
         $url = home_url($request ? "/$request/" : '/');
     }
     
-    // ????嚗??銴?/page/N/嚗?
+    // 處理分頁（避免重複 /page/N/）
     $paged = get_query_var('paged') ?: get_query_var('page');
     if ($paged && $paged > 1) {
         $normalized = hreflang_normalize_url($url);
         $parsed = wp_parse_url($normalized);
         $path = $parsed['path'] ?? '/';
         
-        // ?芸頝臬?銝剝?瘝? /page/N/ ???
+        // 只在路徑中還沒有 /page/N/ 時才加入
         if (!preg_match('~/page/\d+/?$~', $path)) {
             $query = isset($parsed['query']) ? ('?' . $parsed['query']) : '';
             $fragment = isset($parsed['fragment']) ? ('#' . $parsed['fragment']) : '';
@@ -184,11 +184,11 @@ function hreflang_get_current_url() {
 }
 
 /**
- * 瑼Ｘ????term ?臬蝻箏?撠?隤? URL
+ * 檢查文章或 term 是否缺少對應語言 URL
  * 
- * @param int    $object_id   ?拐辣 ID
- * @param string $object_type 'post' ??'term'
- * @return array 蝻箏???閮隞?Ⅳ???
+ * @param int    $object_id   物件 ID
+ * @param string $object_type 'post' 或 'term'
+ * @return array 缺少的語言代碼陣列
  */
 function hreflang_get_missing_language_urls($object_id, $object_type = 'post') {
     $languages = hreflang_get_languages();
@@ -218,8 +218,8 @@ function hreflang_get_missing_language_urls($object_id, $object_type = 'post') {
 }
 
 /**
- * ?斗?拙?URL ?臬?箏?銝?
- * 瘥? host ??path嚗蕭??query/fragment嚗?
+ * 判斷兩個 URL 是否為同一頁面
+ * 比較 host 和 path（忽略 query/fragment）
  * 
  * @param string $url1
  * @param string $url2
@@ -237,11 +237,11 @@ function hreflang_is_same_page($url1, $url2 = '') {
     
     if (!$parsed1 || !$parsed2) return false;
     
-    // 瘥? host
+    // 比較 host
     $same_host = isset($parsed1['host'], $parsed2['host']) && 
                  strtolower($parsed1['host']) === strtolower($parsed2['host']);
     
-    // 瘥? path嚗宏??trailing slash ??頛?
+    // 比較 path（移除 trailing slash 再比較）
     $path1 = isset($parsed1['path']) ? rtrim($parsed1['path'], '/') : '/';
     $path2 = isset($parsed2['path']) ? rtrim($parsed2['path'], '/') : '/';
     
@@ -249,10 +249,10 @@ function hreflang_is_same_page($url1, $url2 = '') {
 }
 
 /**
- * ?蕪?格? URL嚗??方撌梁???????ｇ?
+ * 過濾目標 URL（排除自己的域名和相同頁面）
  * 
- * @param array $targets 隤?隞?Ⅳ => URL ???
- * @return array ?蕪敺????
+ * @param array $targets 語言代碼 => URL 陣列
+ * @return array 過濾後的陣列
  */
 function hreflang_filter_targets($targets) {
     if (empty($targets)) return [];
@@ -265,10 +265,10 @@ function hreflang_filter_targets($targets) {
         
         $url_host = strtolower(parse_url($url, PHP_URL_HOST) ?: '');
         
-        // ?????
+        // 排除同域名
         if ($url_host === $self_host) continue;
         
-        // ??詨??
+        // 排除相同頁面
         if (hreflang_is_same_page($url)) continue;
         
         $filtered[$lang] = $url;
@@ -278,15 +278,15 @@ function hreflang_filter_targets($targets) {
 }
 
 /**
- * ?寞??嗅????芸??菜葫隤?
+ * 根據當前域名自動偵測語言
  * 
- * @return string 隤?隞?Ⅳ
+ * @return string 語言代碼
  */
 function hreflang_detect_current_language() {
     $current_host = strtolower($_SERVER['HTTP_HOST'] ?? '');
     $languages = hreflang_get_languages();
     
-    // ?寞????寥?
+    // 根據域名匹配
     foreach ($languages as $lang) {
         if (!$lang['active']) continue;
         
@@ -296,12 +296,12 @@ function hreflang_detect_current_language() {
         }
     }
     
-    // Fallback ?圈?閮剛?閮
+    // Fallback 到預設語言
     return hreflang_get_default_language();
 }
 
 /**
- * ??隤?憿舐內?迂
+ * 取得語言顯示名稱
  * 
  * @param string $lang_code
  * @return string
@@ -319,7 +319,7 @@ function hreflang_get_language_label($lang_code) {
 }
 
 /**
- * ???身隤?隞?Ⅳ
+ * 取得預設語言代碼
  * 
  * @return string
  */
