@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Hreflang Manager & Language Switcher
  * Plugin URI:  https://github.com/Shawn66168/hreflang-manager
- * Description: 輸出 hreflang 標籤 + 語言切換元件，支援多語站點與 ACF URL 對應。
+ * Description: 頛詨 hreflang 璅惜 + 隤????辣嚗?游?隤?暺? ACF URL 撠???
  * Version:     1.0.0
  * Requires at least: 5.0
  * Requires PHP: 7.4
@@ -16,12 +16,12 @@
  * @package Hreflang_Manager
  */
 
-// 如果直接訪問此檔案則退出
+// 憒??湔閮芸?甇斗?獢????
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// 定義外掛常數
+// 摰儔憭?撣豢
 define('HREFLANG_MANAGER_VERSION', '1.0.0');
 define('HREFLANG_MANAGER_PLUGIN_FILE', __FILE__);
 define('HREFLANG_MANAGER_PLUGIN_DIR', plugin_dir_path(__FILE__));
@@ -29,7 +29,7 @@ define('HREFLANG_MANAGER_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('HREFLANG_MANAGER_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
 /**
- * 檢查系統需求
+ * 瑼Ｘ蝟餌絞?瘙?
  */
 function hreflang_manager_check_requirements() {
     $php_version = phpversion();
@@ -55,22 +55,22 @@ function hreflang_manager_check_requirements() {
 }
 
 /**
- * 外掛啟用時執行
+ * 憭???銵?
  */
 function hreflang_manager_activate() {
-    // 檢查需求
+    // 瑼Ｘ?瘙?
     $errors = hreflang_manager_check_requirements();
     
     if (!empty($errors)) {
         deactivate_plugins(HREFLANG_MANAGER_PLUGIN_BASENAME);
         wp_die(
             implode('<br>', $errors),
-            __('外掛啟用失敗', 'hreflang-manager'),
+            __('憭??憭望?', 'hreflang-manager'),
             ['back_link' => true]
         );
     }
     
-    // 設定預設選項（如果不存在）
+    // 閮剖??身?賊?嚗???摮嚗?
     if (false === get_option('hreflang_languages')) {
         $default_languages = [
             [
@@ -89,7 +89,7 @@ function hreflang_manager_activate() {
         add_option('hreflang_default_lang', 'en');
     }
     
-    // 清除快取
+    // 皜敹怠?
     if (function_exists('wp_cache_flush')) {
         wp_cache_flush();
     }
@@ -97,38 +97,38 @@ function hreflang_manager_activate() {
 register_activation_hook(__FILE__, 'hreflang_manager_activate');
 
 /**
- * 外掛停用時執行
+ * 憭???銵?
  */
 function hreflang_manager_deactivate() {
-    // 清除快取
+    // 皜敹怠?
     if (function_exists('wp_cache_flush')) {
         wp_cache_flush();
     }
     
-    // 注意：不在這裡刪除選項，保留使用者設定
-    // 選項會在卸載時由 uninstall.php 處理
+    // 瘜冽?嚗??券ㄐ?芷?賊?嚗??蝙?刻身摰?
+    // ?賊???貉?? uninstall.php ??
 }
 register_deactivation_hook(__FILE__, 'hreflang_manager_deactivate');
 
 /**
- * 檢查與其他 SEO 外掛的相容性
+ * 瑼Ｘ?隞?SEO 憭??摰寞?
  */
 function hreflang_manager_check_seo_plugin_compatibility() {
-    // Yoast SEO 相容性
+    // Yoast SEO ?詨捆??
     if (defined('WPSEO_VERSION')) {
-        // 確保不與 Yoast 的 hreflang 功能衝突
-        // Yoast 的 hreflang 功能需要 premium 版本，所以通常不會衝突
+        // 蝣箔?銝? Yoast ??hreflang ?銵?
+        // Yoast ??hreflang ??閬?premium ?嚗?隞仿虜銝?銵?
         add_filter('wpseo_hreflang_output', '__return_false', 99);
     }
     
-    // Rank Math 相容性
+    // Rank Math ?詨捆??
     if (defined('RANK_MATH_VERSION')) {
-        // 如果需要，可以在這裡添加相容性處理
+        // 憒??閬??臭誑?券ㄐ瘛餃??詨捆?扯???
     }
     
-    // All in One SEO 相容性
+    // All in One SEO ?詨捆??
     if (defined('AIOSEO_VERSION')) {
-        // 如果需要，可以在這裡添加相容性處理
+        // 憒??閬??臭誑?券ㄐ瘛餃??詨捆?扯???
     }
 }
 add_action('plugins_loaded', 'hreflang_manager_check_seo_plugin_compatibility', 1);
@@ -146,7 +146,7 @@ require_once plugin_dir_path(__FILE__) . 'src/admin-notice.php';
 require_once plugin_dir_path(__FILE__) . 'src/admin-settings.php';
 
 /**
- * 載入翻譯
+ * 頛蝧餉陌
  */
 function hreflang_manager_load_textdomain() {
     load_plugin_textdomain(
@@ -158,13 +158,13 @@ function hreflang_manager_load_textdomain() {
 add_action('plugins_loaded', 'hreflang_manager_load_textdomain');
 
 /**
- * 添加設定連結到外掛列表頁面
+ * 瘛餃?閮剖?????啣???銵券???
  */
 function hreflang_manager_add_action_links($links) {
     $settings_link = sprintf(
         '<a href="%s">%s</a>',
-        admin_url('options-general.php?page=hreflang-hreflang-settings'),
-        __('設定', 'hreflang-manager')
+        admin_url('options-general.php?page=hreflang-settings'),
+        __('閮剖?', 'hreflang-manager')
     );
     
     array_unshift($links, $settings_link);
@@ -174,7 +174,7 @@ function hreflang_manager_add_action_links($links) {
 add_filter('plugin_action_links_' . HREFLANG_MANAGER_PLUGIN_BASENAME, 'hreflang_manager_add_action_links');
 
 /**
- * 添加外掛資訊連結
+ * 瘛餃?憭?鞈????
  */
 function hreflang_manager_add_plugin_row_meta($links, $file) {
     if (HREFLANG_MANAGER_PLUGIN_BASENAME === $file) {
@@ -182,12 +182,12 @@ function hreflang_manager_add_plugin_row_meta($links, $file) {
             'docs' => sprintf(
                 '<a href="%s" target="_blank">%s</a>',
                 'https://github.com/Shawn66168/hreflang-manager/blob/master/README.md',
-                __('文檔', 'hreflang-manager')
+                __('??', 'hreflang-manager')
             ),
             'support' => sprintf(
                 '<a href="%s" target="_blank">%s</a>',
                 'https://github.com/Shawn66168/hreflang-manager/issues',
-                __('支援', 'hreflang-manager')
+                __('?舀', 'hreflang-manager')
             ),
         ];
         

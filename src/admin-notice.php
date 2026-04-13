@@ -1,17 +1,17 @@
-﻿<?php
+<?php
 /**
- * Admin Notices - 提示未填寫語言 URL 的內容
+ * Admin Notices - ?內?芸‵撖怨?閮 URL ?摰?
  * 
  * @package Hreflang_Manager
  */
 
-// 如果直接訪問此檔案則退出
+// 憒??湔閮芸?甇斗?獢????
 if (!defined('ABSPATH')) {
     exit;
 }
 
 /**
- * 初始化後台提示
+ * ?????唳?蝷?
  */
 function hreflang_admin_notice_init() {
     add_action('admin_notices', 'hreflang_display_missing_url_notice');
@@ -19,17 +19,17 @@ function hreflang_admin_notice_init() {
 add_action('admin_init', 'hreflang_admin_notice_init');
 
 /**
- * 顯示缺少語言 URL 的提示
+ * 憿舐內蝻箏?隤? URL ??蝷?
  */
 function hreflang_display_missing_url_notice() {
     $screen = get_current_screen();
     
-    // 只在文章編輯頁面顯示
+    // ?芸??蝺刻摩?憿舐內
     if (!$screen || !in_array($screen->id, ['post', 'page', 'edit-category', 'edit-post_tag'])) {
         return;
     }
     
-    // 如果是文章編輯頁面
+    // 憒??舀?蝡楊頛舫???
     if (in_array($screen->id, ['post', 'page'])) {
         global $post;
         if (!$post) return;
@@ -38,7 +38,7 @@ function hreflang_display_missing_url_notice() {
         
         if (!empty($missing)) {
             echo '<div class="notice notice-warning is-dismissible">';
-            echo '<p><strong>⚠ Hreflang 提示：</strong>此內容未填寫以下語言的對應 URL：</p>';
+            echo '<p><strong>??Hreflang ?內嚗?/strong>甇文摰寞憛怠神隞乩?隤?????URL嚗?/p>';
             echo '<ul style="margin-left: 20px;">';
             
             foreach ($missing as $lang) {
@@ -50,19 +50,19 @@ function hreflang_display_missing_url_notice() {
             }
             
             echo '</ul>';
-            echo '<p>請在側邊欄的「Hreflang 多語言 URL」區塊中填寫對應 URL，否則該語言的 hreflang 標籤將不會輸出。</p>';
+            echo '<p>隢?湧?甈??reflang 憭?閮 URL??憛葉憛怠神撠? URL嚗?府隤???hreflang 璅惜撠??撓?箝?/p>';
             echo '</div>';
         }
     }
     
-    // 如果是分類/標籤編輯頁面
+    // 憒??臬?憿?璅惜蝺刻摩?
     if (isset($_GET['tag_ID'])) {
         $term_id = intval($_GET['tag_ID']);
         $missing = hreflang_get_missing_language_urls($term_id, 'term');
         
         if (!empty($missing)) {
             echo '<div class="notice notice-warning">';
-            echo '<p><strong>⚠ Hreflang 提示：</strong>此分類/標籤未填寫以下語言的對應 URL：</p>';
+            echo '<p><strong>??Hreflang ?內嚗?/strong>甇文?憿?璅惜?芸‵撖思誑銝?閮????URL嚗?/p>';
             echo '<ul style="margin-left: 20px;">';
             
             foreach ($missing as $lang) {
@@ -74,14 +74,14 @@ function hreflang_display_missing_url_notice() {
             }
             
             echo '</ul>';
-            echo '<p>請在下方的「Hreflang 多語言 URL」欄位中填寫對應 URL。</p>';
+            echo '<p>隢銝?reflang 憭?閮 URL??雿葉憛怠神撠? URL??/p>';
             echo '</div>';
         }
     }
 }
 
 /**
- * 在文章列表頁面顯示缺少語言 URL 的警告圖示
+ * ?冽?蝡?銵券??ａ＊蝷箇撩撠?閮 URL ?郎??蝷?
  */
 function hreflang_add_missing_url_column($columns) {
     $columns['hreflang_status'] = 'Hreflang';
@@ -91,18 +91,18 @@ add_filter('manage_posts_columns', 'hreflang_add_missing_url_column');
 add_filter('manage_pages_columns', 'hreflang_add_missing_url_column');
 
 /**
- * 顯示 Hreflang 狀態欄位內容
+ * 憿舐內 Hreflang ???雿摰?
  */
 function hreflang_display_missing_url_column($column, $post_id) {
     if ($column === 'hreflang_status') {
         $missing = hreflang_get_missing_language_urls($post_id, 'post');
         
         if (empty($missing)) {
-            echo '<span style="color: green;" title="所有語言 URL 都已填寫">✓</span>';
+            echo '<span style="color: green;" title="???閮 URL ?賢歇憛怠神">??/span>';
         } else {
             $missing_labels = array_column($missing, 'label');
             printf(
-                '<span style="color: orange;" title="缺少：%s">⚠ %d</span>',
+                '<span style="color: orange;" title="蝻箏?嚗?s">??%d</span>',
                 esc_attr(implode(', ', $missing_labels)),
                 count($missing)
             );
@@ -113,7 +113,7 @@ add_action('manage_posts_custom_column', 'hreflang_display_missing_url_column', 
 add_action('manage_pages_custom_column', 'hreflang_display_missing_url_column', 10, 2);
 
 /**
- * 在分類/標籤列表頁面加入 Hreflang 狀態欄位
+ * ?典?憿?璅惜?”?? Hreflang ???雿?
  */
 function hreflang_add_term_missing_url_column($columns) {
     $columns['hreflang_status'] = 'Hreflang';
@@ -123,18 +123,18 @@ add_filter('manage_edit-category_columns', 'hreflang_add_term_missing_url_column
 add_filter('manage_edit-post_tag_columns', 'hreflang_add_term_missing_url_column');
 
 /**
- * 顯示分類/標籤的 Hreflang 狀態
+ * 憿舐內??/璅惜??Hreflang ???
  */
 function hreflang_display_term_missing_url_column($content, $column, $term_id) {
     if ($column === 'hreflang_status') {
         $missing = hreflang_get_missing_language_urls($term_id, 'term');
         
         if (empty($missing)) {
-            return '<span style="color: green;" title="所有語言 URL 都已填寫">✓</span>';
+            return '<span style="color: green;" title="???閮 URL ?賢歇憛怠神">??/span>';
         } else {
             $missing_labels = array_column($missing, 'label');
             return sprintf(
-                '<span style="color: orange;" title="缺少：%s">⚠ %d</span>',
+                '<span style="color: orange;" title="蝻箏?嚗?s">??%d</span>',
                 esc_attr(implode(', ', $missing_labels)),
                 count($missing)
             );

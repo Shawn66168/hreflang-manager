@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # MySQL 資料庫
+  db:
+    image: mysql:8.0
+    platform: linux/amd64
+    container_name: wp-hreflang-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wordpress-network
+
+  # WordPress 主服務
+  wordpress:
+    depends_on:
+      - db
+    image: wordpress:latest
+    container_name: wp-hreflang-wordpress
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      # 開發模式配置
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_DEBUG_LOG: 1
+      WORDPRESS_DEBUG_DISPLAY: 1
+      SCRIPT_DEBUG: 1
+      SAVEQUERIES: 1
+    volumes:
+      # 將當前插件目錄掛載到 WordPress 插件目錄
+      - ./:/var/www/html/wp-content/plugins/wp-hreflang-manager
+      # WordPress 核心文件
+      - wordpress_data:/var/www/html
+      # 掛載自定義 PHP 配置（用於開發）
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+    networks:
+      - wordpress-network
+
+  # WP-CLI 服務
+  wpcli:
+    depends_on:
+      - db
+      - wordpress
+    image: wordpress:cli
+    container_name: wp-hreflang-wpcli
+    user: "33:33"
+    volumes:
+      - ./:/var/www/html/wp-content/plugins/wp-hreflang-manager
+      - wordpress_data:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    networks:
+      - wordpress-network
+
+volumes:
+  db_data:
+  wordpress_data:
+
+networks:
+  wordpress-network:
+    driver: bridge

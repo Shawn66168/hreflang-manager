@@ -48,6 +48,8 @@ Desktop.ini
 # Build files
 /build/
 /dist/
+/hreflang-manager/
+*.zip
 
 # Test files
 /tests/

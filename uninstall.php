@@ -2,26 +2,26 @@
 /**
  * Uninstall script for Hreflang Manager
  * 
- * 當外掛被刪除時執行此腳本，清理資料庫中的選項
+ * ?嗅??◤?芷?銵迨?單嚗????澈銝剔??賊?
  * 
  * @package Hreflang_Manager
  * @since 1.0.0
  */
 
-// 如果不是透過 WordPress 卸載程序調用，則退出
+// 憒?銝?? WordPress ?貉?蝔?隤輻嚗????
 if (!defined('WP_UNINSTALL_PLUGIN')) {
     exit;
 }
 
 /**
- * 清理外掛相關的資料庫選項
+ * 皜?憭??賊????澈?賊?
  */
 function hreflang_manager_uninstall_cleanup() {
-    // 刪除外掛設定選項
+    // ?芷憭?閮剖??賊?
     delete_option('hreflang_languages');
     delete_option('hreflang_default_lang');
     
-    // 如果是多站點，清理所有站點的選項
+    // 憒??臬?蝡?嚗?????暺??賊?
     if (is_multisite()) {
         global $wpdb;
         
@@ -34,33 +34,33 @@ function hreflang_manager_uninstall_cleanup() {
             delete_option('hreflang_languages');
             delete_option('hreflang_default_lang');
             
-            // 清理 post meta（可選，取消註解以啟用）
+            // 皜? post meta嚗?賂???閮餉圾隞亙??剁?
             // hreflang_manager_cleanup_post_meta();
             
-            // 清理 term meta（可選，取消註解以啟用）
+            // 皜? term meta嚗?賂???閮餉圾隞亙??剁?
             // hreflang_manager_cleanup_term_meta();
         }
         
         switch_to_blog($original_blog_id);
     } else {
-        // 清理 post meta（可選，取消註解以啟用）
+        // 皜? post meta嚗?賂???閮餉圾隞亙??剁?
         // hreflang_manager_cleanup_post_meta();
         
-        // 清理 term meta（可選，取消註解以啟用）
+        // 皜? term meta嚗?賂???閮餉圾隞亙??剁?
         // hreflang_manager_cleanup_term_meta();
     }
 }
 
 /**
- * 清理所有文章的 hreflang meta
+ * 皜????蝡? hreflang meta
  * 
- * 注意：預設不執行此操作，因為使用者可能想保留這些資料
- * 若要啟用，請取消上方函式中的註解
+ * 瘜冽?嚗?閮凋??瑁?甇斗?雿??雿輻??賣靽???鞈?
+ * ?亥??嚗???銝?賢?銝剔?閮餉圾
  */
 function hreflang_manager_cleanup_post_meta() {
     global $wpdb;
     
-    // 刪除所有 alt_{lang}_url 格式的 meta
+    // ?芷???alt_{lang}_url ?澆???meta
     $wpdb->query(
         "DELETE FROM $wpdb->postmeta 
          WHERE meta_key LIKE 'alt_%_url'"
@@ -68,20 +68,20 @@ function hreflang_manager_cleanup_post_meta() {
 }
 
 /**
- * 清理所有分類的 hreflang meta
+ * 皜????憿? hreflang meta
  * 
- * 注意：預設不執行此操作，因為使用者可能想保留這些資料
- * 若要啟用，請取消上方函式中的註解
+ * 瘜冽?嚗?閮凋??瑁?甇斗?雿??雿輻??賣靽???鞈?
+ * ?亥??嚗???銝?賢?銝剔?閮餉圾
  */
 function hreflang_manager_cleanup_term_meta() {
     global $wpdb;
     
-    // 刪除所有 term_alt_{lang}_url 格式的 meta
+    // ?芷???term_alt_{lang}_url ?澆???meta
     $wpdb->query(
         "DELETE FROM $wpdb->termmeta 
          WHERE meta_key LIKE 'term_alt_%_url'"
     );
 }
 
-// 執行清理
+// ?瑁?皜?
 hreflang_manager_uninstall_cleanup();

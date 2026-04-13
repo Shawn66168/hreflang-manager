@@ -1,39 +1,39 @@
-﻿<?php
+<?php
 /**
  * Hreflang Core - Output hreflang tags
  * 
  * @package Hreflang_Manager
  */
 
-// 如果直接訪問此檔案則退出
+// 憒??湔閮芸?甇斗?獢????
 if (!defined('ABSPATH')) {
     exit;
 }
 
 /**
- * 初始化 hreflang 輸出
- * 使用較低的優先級確保在其他 SEO 外掛之後執行
+ * ????hreflang 頛詨
+ * 雿輻頛????蝣箔??典隞?SEO 憭?銋??瑁?
  */
 function hreflang_init() {
-    // 優先級設為 1，確保盡早輸出到 head
+    // ?芸?蝝身??1嚗Ⅱ靽?抵撓?箏 head
     add_action('wp_head', 'hreflang_output_hreflang', 1);
 }
 add_action('init', 'hreflang_init');
 
 /**
- * 在 <head> 中輸出 hreflang 標籤
- * 根據原始 Portwell Snippet 的邏輯設計
+ * ??<head> 銝剛撓??hreflang 璅惜
+ * ?寞??? Portwell Snippet ??頛航身閮?
  */
 function hreflang_output_hreflang() {
-    // 允許透過過濾器停用輸出（例如在特定頁面）
+    // ?迂???蕪?典??刻撓?綽?靘??函摰??ｇ?
     if (!apply_filters('hreflang_manager_enable_output', true)) {
         return;
     }
     
-    // 偵測當前站點語言
+    // ?菜葫?嗅?蝡?隤?
     $current_lang = hreflang_detect_current_language();
     
-    // 取得當前頁面 URL
+    // ???嗅?? URL
     $current_url = hreflang_get_current_url();
     
     if (!$current_url) {
@@ -42,14 +42,14 @@ function hreflang_output_hreflang() {
     
     echo "\n<!-- Hreflang Manager -->\n";
     
-    // 1. 輸出當前頁面自己的 hreflang
+    // 1. 頛詨?嗅???芸楛??hreflang
     printf(
         '<link rel="alternate" hreflang="%s" href="%s" />'."\n",
         esc_attr($current_lang),
         esc_url($current_url)
     );
     
-    // 2. 輸出 x-default（只在預設語言的首頁）
+    // 2. 頛詨 x-default嚗?券?閮剛?閮????
     $default_lang = hreflang_get_default_language();
     if ($current_lang === $default_lang && (is_front_page() || is_home())) {
         printf(
@@ -58,7 +58,7 @@ function hreflang_output_hreflang() {
         );
     }
     
-    // 3. 輸出其他語言的 hreflang
+    // 3. 頛詨?嗡?隤???hreflang
     $alternate_urls = hreflang_get_alt_urls_for_current();
     
     foreach ($alternate_urls as $lang_code => $url) {
@@ -75,11 +75,11 @@ function hreflang_output_hreflang() {
 }
 
 /**
- * 檢查是否應該移除其他外掛的 hreflang 輸出
- * 避免重複輸出造成 SEO 問題
+ * 瑼Ｘ?臬?府蝘駁?嗡?憭???hreflang 頛詨
+ * ?踹???頛詨?? SEO ??
  */
 function hreflang_manager_remove_conflicting_hreflang() {
-    // 移除 Yoast SEO Premium 的 hreflang（如果存在）
+    // 蝘駁 Yoast SEO Premium ??hreflang嚗????剁?
     if (has_filter('wpseo_hreflang_url')) {
         remove_all_filters('wpseo_hreflang_url');
     }
@@ -87,21 +87,21 @@ function hreflang_manager_remove_conflicting_hreflang() {
 add_action('template_redirect', 'hreflang_manager_remove_conflicting_hreflang', 1);
 
 /**
- * 取得當前頁面的所有語言對應 URL
- * 根據原始 Portwell Snippet 的邏輯設計
+ * ???嗅??????閮撠? URL
+ * ?寞??? Portwell Snippet ??頛航身閮?
  * 
- * @return array 語言代碼 => URL 的對應陣列（不包含自己）
+ * @return array 隤?隞?Ⅳ => URL ?????銝??怨撌梧?
  */
 function hreflang_get_alt_urls_for_current() {
     $current_lang = hreflang_detect_current_language();
     $languages = hreflang_get_languages();
     $urls = [];
     
-    // 根據語言建立 meta key 對應（相容舊的 Portwell 命名）
+    // ?寞?隤?撱箇? meta key 撠?嚗摰寡???Portwell ?賢?嚗?
     $lang_meta_map = [];
     foreach ($languages as $lang) {
         if (!$lang['active']) continue;
-        // 支援多種 meta key 格式
+        // ?舀憭車 meta key ?澆?
         $lang_meta_map[$lang['code']] = [
             'post' => 'alt_' . $lang['code'] . '_url',
             'term' => 'term_alt_' . $lang['code'] . '_url',
@@ -109,10 +109,10 @@ function hreflang_get_alt_urls_for_current() {
     }
     
     if (is_singular()) {
-        // 文章或頁面
+        // ??????
         $post_id = get_the_ID();
         
-        // 取得所有語言的 URL
+        // ?????閮??URL
         foreach ($lang_meta_map as $code => $keys) {
             $url = get_post_meta($post_id, $keys['post'], true);
             if ($url) {
@@ -121,7 +121,7 @@ function hreflang_get_alt_urls_for_current() {
         }
         
     } elseif (is_category() || is_tag() || is_tax()) {
-        // 支援所有分類頁面（部落格分類/標籤 + 自訂分類 + WooCommerce 分類）
+        // ?舀???憿??ｇ??刻?澆?憿?璅惜 + ?芾??? + WooCommerce ??嚗?
         $term = get_queried_object();
         if ($term && !is_wp_error($term) && !empty($term->term_id)) {
             foreach ($lang_meta_map as $code => $keys) {
@@ -133,28 +133,28 @@ function hreflang_get_alt_urls_for_current() {
         }
         
     } else {
-        // Fallback：非單一頁面，沒有對應資料時轉到首頁
+        // Fallback嚗??桐??嚗???????頧擐?
         foreach ($languages as $lang) {
             if (!$lang['active']) continue;
             $urls[$lang['code']] = trailingslashit($lang['domain']);
         }
     }
     
-    // 移除當前語言（不輸出自己）
+    // 蝘駁?嗅?隤?嚗?頛詨?芸楛嚗?
     if (isset($urls[$current_lang])) {
         unset($urls[$current_lang]);
     }
     
-    // 使用 filter 過濾（排除同域名和相同頁面）
+    // 雿輻 filter ?蕪嚗??文???????ｇ?
     $urls = hreflang_filter_targets($urls);
     
-    // 允許過濾器修改 URL 列表
+    // ?迂?蕪?其耨??URL ?”
     return apply_filters('hreflang_alternate_urls', $urls, get_queried_object());
 }
 
 /**
- * 在文章編輯頁面加入 ACF 欄位（如果使用 ACF）
- * 此函數為示例，實際使用時需安裝並啟用 ACF 外掛
+ * ?冽?蝡楊頛舫??Ｗ???ACF 甈?嚗??蝙??ACF嚗?
+ * 甇文?貊蝷箔?嚗祕?蝙?冽??摰?銝血???ACF 憭?
  */
 function hreflang_register_acf_fields() {
     if (!function_exists('acf_add_local_field_group')) {
@@ -172,7 +172,7 @@ function hreflang_register_acf_fields() {
             'label' => $lang['label'] . ' URL',
             'name' => 'alt_' . $lang['code'] . '_url',
             'type' => 'url',
-            'instructions' => '輸入 ' . $lang['label'] . ' 版本的對應 URL',
+            'instructions' => '頛詨 ' . $lang['label'] . ' ?????URL',
             'placeholder' => 'https://' . $lang['domain'] . '/...',
         ];
     }
@@ -180,7 +180,7 @@ function hreflang_register_acf_fields() {
     if (!empty($fields)) {
         acf_add_local_field_group([
             'key' => 'group_hreflang',
-            'title' => 'Hreflang 多語言 URL',
+            'title' => 'Hreflang 憭?閮 URL',
             'fields' => $fields,
             'location' => [
                 [
@@ -207,13 +207,13 @@ function hreflang_register_acf_fields() {
 add_action('acf/init', 'hreflang_register_acf_fields');
 
 /**
- * 在分類編輯頁面加入 term meta 欄位
+ * ?典?憿楊頛舫??Ｗ???term meta 甈?
  */
 function hreflang_add_term_meta_fields($term) {
     $languages = hreflang_get_languages();
     
     echo '<tr class="form-field">';
-    echo '<th scope="row"><strong>Hreflang 多語言 URL</strong></th>';
+    echo '<th scope="row"><strong>Hreflang 憭?閮 URL</strong></th>';
     echo '<td>';
     
     foreach ($languages as $lang) {
@@ -243,7 +243,7 @@ function hreflang_add_term_meta_fields($term) {
 }
 
 /**
- * 儲存 term meta
+ * ?脣? term meta
  */
 function hreflang_save_term_meta_fields($term_id) {
     $languages = hreflang_get_languages();
@@ -260,7 +260,7 @@ function hreflang_save_term_meta_fields($term_id) {
     }
 }
 
-// 註冊 term meta 欄位到常見的分類
+// 閮餃? term meta 甈??啣虜閬???
 $taxonomies = ['category', 'post_tag', 'product_cat'];
 foreach ($taxonomies as $taxonomy) {
     add_action($taxonomy . '_edit_form_fields', 'hreflang_add_term_meta_fields');
