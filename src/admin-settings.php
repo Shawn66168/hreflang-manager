@@ -263,15 +263,15 @@ function hreflang_render_settings_page() {
                     <table class="form-table" style="width:auto">
                         <tr>
                             <th>背景色</th>
-                            <td><input type="color" name="styles[btn_bg]" value="<?php echo esc_attr($cs['btn_bg']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_bg']); ?>"><input type="text" name="styles[btn_bg]" value="<?php echo esc_attr($cs['btn_bg']); ?>" class="hrl-hex" placeholder="#ffffff" maxlength="9" spellcheck="false"></td>
                         </tr>
                         <tr>
                             <th>文字色</th>
-                            <td><input type="color" name="styles[btn_color]" value="<?php echo esc_attr($cs['btn_color']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_color']); ?>"><input type="text" name="styles[btn_color]" value="<?php echo esc_attr($cs['btn_color']); ?>" class="hrl-hex" placeholder="#333333" maxlength="9" spellcheck="false"></td>
                         </tr>
                         <tr>
                             <th>邊框色</th>
-                            <td><input type="color" name="styles[btn_border]" value="<?php echo esc_attr($cs['btn_border']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_border']); ?>"><input type="text" name="styles[btn_border]" value="<?php echo esc_attr($cs['btn_border']); ?>" class="hrl-hex" placeholder="#e5e5e5" maxlength="9" spellcheck="false"></td>
                         </tr>
                         <tr>
                             <th>圓角</th>
@@ -289,19 +289,19 @@ function hreflang_render_settings_page() {
                     <table class="form-table" style="width:auto">
                         <tr>
                             <th>背景色</th>
-                            <td><input type="color" name="styles[menu_bg]" value="<?php echo esc_attr($cs['menu_bg']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['menu_bg']); ?>"><input type="text" name="styles[menu_bg]" value="<?php echo esc_attr($cs['menu_bg']); ?>" class="hrl-hex" placeholder="#ffffff" maxlength="9" spellcheck="false"></td>
                         </tr>
                         <tr>
                             <th>邊框色</th>
-                            <td><input type="color" name="styles[menu_border]" value="<?php echo esc_attr($cs['menu_border']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['menu_border']); ?>"><input type="text" name="styles[menu_border]" value="<?php echo esc_attr($cs['menu_border']); ?>" class="hrl-hex" placeholder="#e5e5e5" maxlength="9" spellcheck="false"></td>
                         </tr>
                         <tr>
                             <th>連結色</th>
-                            <td><input type="color" name="styles[link_color]" value="<?php echo esc_attr($cs['link_color']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['link_color']); ?>"><input type="text" name="styles[link_color]" value="<?php echo esc_attr($cs['link_color']); ?>" class="hrl-hex" placeholder="#333333" maxlength="9" spellcheck="false"></td>
                         </tr>
                         <tr>
                             <th>Hover 背景</th>
-                            <td><input type="color" name="styles[hover_bg]" value="<?php echo esc_attr($cs['hover_bg']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['hover_bg']); ?>"><input type="text" name="styles[hover_bg]" value="<?php echo esc_attr($cs['hover_bg']); ?>" class="hrl-hex" placeholder="#f9f9f9" maxlength="9" spellcheck="false"></td>
                         </tr>
                     </table>
                 </div>
@@ -311,15 +311,15 @@ function hreflang_render_settings_page() {
                     <table class="form-table" style="width:auto">
                         <tr>
                             <th>背景色</th>
-                            <td><input type="color" name="styles[active_bg]" value="<?php echo esc_attr($cs['active_bg']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['active_bg']); ?>"><input type="text" name="styles[active_bg]" value="<?php echo esc_attr($cs['active_bg']); ?>" class="hrl-hex" placeholder="#0073aa" maxlength="9" spellcheck="false"></td>
                         </tr>
                         <tr>
                             <th>文字色</th>
-                            <td><input type="color" name="styles[active_color]" value="<?php echo esc_attr($cs['active_color']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['active_color']); ?>"><input type="text" name="styles[active_color]" value="<?php echo esc_attr($cs['active_color']); ?>" class="hrl-hex" placeholder="#ffffff" maxlength="9" spellcheck="false"></td>
                         </tr>
                         <tr>
                             <th>邊框色</th>
-                            <td><input type="color" name="styles[active_border]" value="<?php echo esc_attr($cs['active_border']); ?>" class="hrl-color"></td>
+                            <td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['active_border']); ?>"><input type="text" name="styles[active_border]" value="<?php echo esc_attr($cs['active_border']); ?>" class="hrl-hex" placeholder="#0073aa" maxlength="9" spellcheck="false"></td>
                         </tr>
                     </table>
                 </div>
@@ -421,14 +421,35 @@ function hreflang_render_settings_page() {
             if (!t) return;
             $.each(t, function (k, v) {
                 var el = $('[name="styles[' + k + ']"]');
-                if (el.length) el.val(v);
+                if (el.length) {
+                    el.val(v);
+                    // 同步更新旁邊的顏色選擇器
+                    if (el.hasClass('hrl-hex')) {
+                        el.siblings('.hrl-color').val(v);
+                    }
+                }
             });
             if (t.btn_radius) $('#hrl-btn-radius').val(t.btn_radius);
             if (t.font_size)  $('#hrl-font-size').val(t.font_size);
             updatePreview();
         });
 
-        $(document).on('input change', '.hrl-color, #hrl-btn-radius, #hrl-font-size', updatePreview);
+        // 顏色選擇器 → 文字欄位（雙向同步）
+        $(document).on('input', '.hrl-color', function () {
+            $(this).siblings('.hrl-hex').val($(this).val());
+            updatePreview();
+        });
+
+        // 文字欄位 → 顏色選擇器（輸入合法 hex 才同步）
+        $(document).on('input blur', '.hrl-hex', function () {
+            var v = $.trim($(this).val());
+            if (/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/.test(v)) {
+                $(this).siblings('.hrl-color').val(v.slice(0, 7));
+            }
+            updatePreview();
+        });
+
+        $(document).on('input change', '#hrl-btn-radius, #hrl-font-size', updatePreview);
         $(document).ready(updatePreview);
     }(jQuery));
     </script>
@@ -439,7 +460,9 @@ function hreflang_render_settings_page() {
         width: 100%;
         max-width: 200px;
     }
-    .hrl-color { width:50px; height:32px; padding:2px; cursor:pointer; border:1px solid #ddd; border-radius:3px; vertical-align:middle; }
+    .hrl-color { width:46px; height:32px; padding:2px; cursor:pointer; border:1px solid #ddd; border-radius:3px 0 0 3px; border-right:0; vertical-align:middle; box-sizing:border-box; }
+    .hrl-hex { width:82px; height:32px; font-size:12px; font-family:monospace; padding:0 6px; border:1px solid #ddd; border-radius:0 3px 3px 0; vertical-align:middle; box-sizing:border-box; text-transform:lowercase; }
+    .hrl-hex:focus { outline:none; border-color:#007cba; box-shadow:0 0 0 1px #007cba; z-index:1; position:relative; }
     #hrl-styles-form .form-table th { width:110px; font-weight:600; padding:8px 10px 8px 0; white-space:nowrap; vertical-align:middle; }
     #hrl-styles-form .form-table td { padding:6px 0; vertical-align:middle; }
     .hrl-theme-btn { margin-right:6px !important; }
