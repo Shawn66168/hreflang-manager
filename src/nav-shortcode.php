@@ -34,15 +34,46 @@ function hreflang_switcher_shortcode($atts) {
         'style' => 'dropdown',
     ], $atts, 'hreflang_switcher');
 
-    // 取得替代語言 URL（不包含當前語言）
-    $alternate_urls = hreflang_get_alt_urls_for_current();
+    $languages    = hreflang_get_languages();
+    $current_lang = hreflang_detect_current_language();
+    $post_id      = is_singular() ? get_the_ID() : 0;
 
-    if (empty($alternate_urls)) {
+    // 為每個語言取得 URL
+    // 優先從文章 meta 讀取，否則 fallback 到該語言的 domain 根目錄
+    // 不使用 hreflang_filter_targets()，避免在單域名環境下全部被過濾
+    $lang_data = [];
+    foreach ($languages as $lang) {
+        if (!$lang['active']) continue;
+
+        $url = '';
+        if ($post_id) {
+            $url = get_post_meta($post_id, 'alt_' . $lang['code'] . '_url', true);
+        }
+        if (empty($url)) {
+            $url = trailingslashit($lang['domain']);
+        }
+
+        $lang_data[$lang['code']] = [
+            'label' => $lang['label'],
+            'url'   => hreflang_normalize_url($url),
+        ];
+    }
+
+    // 移除當前語言（顯示在按鈕上，不放進下拉選單）
+    $other_langs = $lang_data;
+    unset($other_langs[$current_lang]);
+
+    // 沒有其他語言時不輸出
+    if (empty($other_langs)) {
         return '';
     }
 
-    $current_lang  = hreflang_detect_current_language();
-    $current_label = hreflang_get_language_label($current_lang);
+    $current_label = isset($lang_data[$current_lang])
+        ? $lang_data[$current_lang]['label']
+        : strtoupper($current_lang);
+
+    // 使用 unique ID 讓 JS 精確定位 wrapper，避免 wpautop 插入多餘標籤的影響
+    $uid = 'hrlsw-' . wp_unique_id();
 
     ob_start();
 
@@ -53,14 +84,14 @@ function hreflang_switcher_shortcode($atts) {
             $wrapper_class .= ' ' . esc_attr($atts['class']);
         }
         ?>
-        <div class="<?php echo esc_attr($wrapper_class); ?>">
+        <div id="<?php echo esc_attr($uid); ?>" class="<?php echo esc_attr($wrapper_class); ?>">
             <button type="button" class="pww-navlang__btn"><?php echo esc_html($current_label); ?> &#9660;</button>
             <ul class="pww-navlang__menu" aria-hidden="true">
-                <?php foreach ($alternate_urls as $lang_code => $url) : ?>
+                <?php foreach ($other_langs as $lang_code => $data) : ?>
                     <li>
                         <a hreflang="<?php echo esc_attr($lang_code); ?>"
-                           href="<?php echo esc_url(hreflang_normalize_url($url)); ?>">
-                            <?php echo esc_html(hreflang_get_language_label($lang_code)); ?>
+                           href="<?php echo esc_url($data['url']); ?>">
+                            <?php echo esc_html($data['label']); ?>
                         </a>
                     </li>
                 <?php endforeach; ?>
@@ -69,11 +100,8 @@ function hreflang_switcher_shortcode($atts) {
         <script>
         (function () {
             try {
-                var script  = document.currentScript;
-                if (!script) return;
-                var wrapper = script.previousElementSibling;
-                if (!wrapper || !wrapper.classList.contains('pww-navlang')) return;
-
+                var wrapper = document.getElementById('<?php echo esc_js($uid); ?>');
+                if (!wrapper) return;
                 var btn  = wrapper.querySelector('.pww-navlang__btn');
                 var menu = wrapper.querySelector('.pww-navlang__menu');
                 if (!btn || !menu) return;
@@ -95,7 +123,7 @@ function hreflang_switcher_shortcode($atts) {
         </script>
         <?php
     } else {
-        // 清單樣式
+        // 清單樣式 - 顯示所有語言，當前標記 active
         $wrapper_class = 'hreflang-lang-switcher hreflang-list';
         if (!empty($atts['class'])) {
             $wrapper_class .= ' ' . esc_attr($atts['class']);
@@ -103,22 +131,19 @@ function hreflang_switcher_shortcode($atts) {
 
         echo '<ul class="' . esc_attr($wrapper_class) . '">';
 
-        // 加入當前語言（active）
+        // 當前語言（active 狀態）
         echo '<li class="hreflang-lang-item active">';
-        printf(
-            '<span class="hreflang-lang-link current">%s</span>',
-            esc_html($current_label)
-        );
+        printf('<span class="hreflang-lang-link current">%s</span>', esc_html($current_label));
         echo '</li>';
 
         // 其他語言
-        foreach ($alternate_urls as $lang_code => $url) {
+        foreach ($other_langs as $lang_code => $data) {
             echo '<li class="hreflang-lang-item">';
             printf(
                 '<a href="%s" class="hreflang-lang-link" hreflang="%s">%s</a>',
-                esc_url(hreflang_normalize_url($url)),
+                esc_url($data['url']),
                 esc_attr($lang_code),
-                esc_html(hreflang_get_language_label($lang_code))
+                esc_html($data['label'])
             );
             echo '</li>';
         }
@@ -136,12 +161,12 @@ function hreflang_enqueue_switcher_styles() {
     wp_register_style('hreflang-inline-base', false);
     wp_enqueue_style('hreflang-inline-base');
 
-    $css  = '.pww-navlang{position:relative}';
+    $css  = '.pww-navlang{position:relative;display:inline-block}';
     $css .= '.pww-navlang__btn{cursor:pointer;padding:.5rem 1rem;border:1px solid #e5e5e5;border-radius:.5rem;background:#fff;font-size:14px}';
     $css .= '.pww-navlang__btn:hover{background:#f9f9f9}';
-    $css .= '.pww-navlang__menu{display:none;position:absolute;right:0;z-index:9999;background:#fff;border:1px solid #e5e5e5;border-radius:.5rem;padding:.25rem 0;min-width:10rem;margin-top:.25rem}';
+    $css .= '.pww-navlang__menu{display:none;position:absolute;right:0;z-index:9999;background:#fff;border:1px solid #e5e5e5;border-radius:.5rem;padding:.25rem 0;min-width:10rem;margin-top:.25rem;list-style:none}';
     $css .= '.pww-navlang__menu.is-open{display:block}';
-    $css .= '.pww-navlang__menu li{list-style:none;margin:0}';
+    $css .= '.pww-navlang__menu li{list-style:none;margin:0;padding:0}';
     $css .= '.pww-navlang__menu a{display:block;padding:.5rem .75rem;text-decoration:none;color:#333}';
     $css .= '.pww-navlang__menu a:hover{background:rgba(0,0,0,.04)}';
 
