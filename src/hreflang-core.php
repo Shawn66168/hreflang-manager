@@ -209,6 +209,116 @@ function hreflang_register_acf_fields() {
 add_action('acf/init', 'hreflang_register_acf_fields');
 
 /**
+ * 註冊原生文章/頁面 metabox（未安裝 ACF 時使用）
+ */
+function hreflang_register_post_meta_box() {
+    // 若有 ACF，已由 ACF 欄位負責 UI，避免重複顯示
+    if (function_exists('acf_add_local_field_group')) {
+        return;
+    }
+
+    $post_types = ['post', 'page'];
+    foreach ($post_types as $post_type) {
+        add_meta_box(
+            'hreflang_post_urls',
+            'Hreflang 多語言 URL',
+            'hreflang_render_post_meta_box',
+            $post_type,
+            'side',
+            'default'
+        );
+    }
+}
+add_action('add_meta_boxes', 'hreflang_register_post_meta_box');
+
+/**
+ * 渲染文章/頁面 hreflang URL metabox
+ *
+ * @param WP_Post $post
+ */
+function hreflang_render_post_meta_box($post) {
+    wp_nonce_field('hreflang_post_meta_nonce', 'hreflang_post_meta_nonce');
+
+    $languages = hreflang_get_languages();
+    if (empty($languages)) {
+        echo '<p>尚未設定語言，請先至設定頁面新增語言。</p>';
+        return;
+    }
+
+    foreach ($languages as $lang) {
+        if (empty($lang['active'])) {
+            continue;
+        }
+
+        $meta_key = 'alt_' . $lang['code'] . '_url';
+        $value = get_post_meta($post->ID, $meta_key, true);
+        $hreflang_code = hreflang_get_hreflang_code($lang);
+
+        echo '<p>';
+        printf(
+            '<label for="%1$s"><strong>%2$s</strong> <code>[%3$s]</code></label><br>',
+            esc_attr($meta_key),
+            esc_html($lang['label']),
+            esc_html($hreflang_code)
+        );
+        printf(
+            '<input type="url" id="%1$s" name="%1$s" value="%2$s" class="widefat" placeholder="https://%3$s/..." />',
+            esc_attr($meta_key),
+            esc_attr($value),
+            esc_attr(parse_url($lang['domain'], PHP_URL_HOST) ?: $lang['domain'])
+        );
+        echo '</p>';
+    }
+
+    echo '<p class="description">每篇文章/頁面可獨立設定各語系對應 URL。</p>';
+}
+
+/**
+ * 儲存文章/頁面 hreflang URL metabox 資料
+ *
+ * @param int $post_id
+ */
+function hreflang_save_post_meta_fields($post_id) {
+    if (!isset($_POST['hreflang_post_meta_nonce']) || !wp_verify_nonce($_POST['hreflang_post_meta_nonce'], 'hreflang_post_meta_nonce')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+        return;
+    }
+
+    $post_type = get_post_type($post_id);
+    if (!in_array($post_type, ['post', 'page'], true)) {
+        return;
+    }
+
+    if (!current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $languages = hreflang_get_languages();
+    foreach ($languages as $lang) {
+        if (empty($lang['active'])) {
+            continue;
+        }
+
+        $meta_key = 'alt_' . $lang['code'] . '_url';
+        if (!isset($_POST[$meta_key])) {
+            continue;
+        }
+
+        $value = trim((string) wp_unslash($_POST[$meta_key]));
+        if ($value === '') {
+            delete_post_meta($post_id, $meta_key);
+            continue;
+        }
+
+        update_post_meta($post_id, $meta_key, esc_url_raw($value));
+    }
+}
+add_action('save_post', 'hreflang_save_post_meta_fields');
+
+/**
  * 在分類編輯頁面加入 term meta 欄位
  */
 function hreflang_add_term_meta_fields($term) {

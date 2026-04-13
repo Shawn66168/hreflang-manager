@@ -213,6 +213,7 @@ function hreflang_normalize_url($url) {
     
     $scheme = $parsed['scheme'] ?? 'https';
     $host   = $parsed['host'];
+    $port   = isset($parsed['port']) ? ':' . intval($parsed['port']) : '';
     $path   = $parsed['path'] ?? '/';
     $query  = isset($parsed['query']) ? ('?' . $parsed['query']) : '';
     $fragment = isset($parsed['fragment']) ? ('#' . $parsed['fragment']) : '';
@@ -221,7 +222,29 @@ function hreflang_normalize_url($url) {
     $path = '/' . ltrim($path, '/');
     $path = trailingslashit($path);
     
-    return $scheme . '://' . $host . $path . $query . $fragment;
+    return $scheme . '://' . $host . $port . $path . $query . $fragment;
+}
+
+/**
+ * 取得 URL 的 host:port（若無 port 僅回傳 host）
+ *
+ * @param string $url
+ * @return string
+ */
+function hreflang_get_url_host_port($url) {
+    if (!$url) {
+        return '';
+    }
+
+    $parsed = wp_parse_url($url);
+    if (!$parsed || empty($parsed['host'])) {
+        return '';
+    }
+
+    $host = strtolower($parsed['host']);
+    $port = isset($parsed['port']) ? ':' . intval($parsed['port']) : '';
+
+    return $host . $port;
 }
 
 /**
@@ -263,7 +286,8 @@ function hreflang_get_current_url() {
             $query = isset($parsed['query']) ? ('?' . $parsed['query']) : '';
             $fragment = isset($parsed['fragment']) ? ('#' . $parsed['fragment']) : '';
             $base_path = trailingslashit($path);
-            $url = $parsed['scheme'] . '://' . $parsed['host'] . $base_path . 'page/' . intval($paged) . '/' . $query . $fragment;
+            $port = isset($parsed['port']) ? ':' . intval($parsed['port']) : '';
+            $url = $parsed['scheme'] . '://' . $parsed['host'] . $port . $base_path . 'page/' . intval($paged) . '/' . $query . $fragment;
         }
     }
     
@@ -324,9 +348,8 @@ function hreflang_is_same_page($url1, $url2 = '') {
     
     if (!$parsed1 || !$parsed2) return false;
     
-    // 比較 host
-    $same_host = isset($parsed1['host'], $parsed2['host']) && 
-                 strtolower($parsed1['host']) === strtolower($parsed2['host']);
+    // 比較 host:port
+    $same_host = hreflang_get_url_host_port($url1) === hreflang_get_url_host_port($url2);
     
     // 比較 path（移除 trailing slash 再比較）
     $path1 = isset($parsed1['path']) ? rtrim($parsed1['path'], '/') : '/';
@@ -345,12 +368,12 @@ function hreflang_filter_targets($targets) {
     if (empty($targets)) return [];
     
     $filtered = [];
-    $self_host = strtolower(parse_url(home_url(), PHP_URL_HOST));
+    $self_host = hreflang_get_url_host_port(home_url());
     
     foreach ($targets as $lang => $url) {
         if (!$url) continue;
         
-        $url_host = strtolower(parse_url($url, PHP_URL_HOST) ?: '');
+        $url_host = hreflang_get_url_host_port($url);
         
         // 排除同域名
         if ($url_host === $self_host) continue;
@@ -377,7 +400,7 @@ function hreflang_detect_current_language() {
     foreach ($languages as $lang) {
         if (!$lang['active']) continue;
         
-        $lang_host = strtolower(parse_url($lang['domain'], PHP_URL_HOST) ?: '');
+        $lang_host = hreflang_get_url_host_port($lang['domain']);
         if ($lang_host === $current_host) {
             return $lang['code'];
         }
