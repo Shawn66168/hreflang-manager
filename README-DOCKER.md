@@ -8,8 +8,10 @@ docker compose up -d
 ```
 
 ### 2. 訪問 WordPress
-- **前台**：http://localhost:8080
-- **後台**：http://localhost:8080/wp-admin
+- **Site A 前台**：http://localhost:8080
+- **Site A 後台**：http://localhost:8080/wp-admin
+- **Site B 前台**：http://localhost:8081
+- **Site B 後台**：http://localhost:8081/wp-admin
 
 ### 3. 預設登入資訊
 初次訪問時需要完成 WordPress 安裝，建議使用：
@@ -18,11 +20,32 @@ docker compose up -d
 - **電子郵件**：your-email@example.com
 
 ### 4. 資料庫資訊
-- **主機**：db
-- **資料庫名稱**：wordpress
+- **Site A 主機**：db
+- **Site A 資料庫名稱**：wordpress_a
+- **Site B 主機**：db2
+- **Site B 資料庫名稱**：wordpress_b
 - **用戶名**：wordpress
 - **密碼**：wordpress
 - **端口**：3306
+
+### 5. 初始化兩個站點（首次）
+```bash
+# Site A
+docker compose run --rm wpcli wp core install \
+  --url=http://localhost:8080 \
+  --title="Hreflang Site A" \
+  --admin_user=admin \
+  --admin_password=admin123 \
+  --admin_email=admin@example.com
+
+# Site B
+docker compose run --rm wpcli2 wp core install \
+  --url=http://localhost:8081 \
+  --title="Hreflang Site B" \
+  --admin_user=admin \
+  --admin_password=admin123 \
+  --admin_email=admin@example.com
+```
 
 ## 使用 WP-CLI
 
@@ -30,21 +53,25 @@ docker compose up -d
 ```bash
 # 基本語法
 docker compose run --rm wpcli wp <command>
+docker compose run --rm wpcli2 wp <command>
 
 # 範例：檢查 WordPress 版本
 docker compose run --rm wpcli wp core version
 
 # 範例：列出所有插件
 docker compose run --rm wpcli wp plugin list
+docker compose run --rm wpcli2 wp plugin list
 
 # 範例：啟用本插件
 docker compose run --rm wpcli wp plugin activate wp-hreflang-manager
+docker compose run --rm wpcli2 wp plugin activate wp-hreflang-manager
 
 # 範例：安裝其他插件
 docker compose run --rm wpcli wp plugin install akismet --activate
 
 # 範例：創建測試文章
 docker compose run --rm wpcli wp post create --post_title="測試文章" --post_content="這是測試內容" --post_status=publish
+docker compose run --rm wpcli2 wp post create --post_title="站點 B 測試文章" --post_content="這是站點 B 測試內容" --post_status=publish
 ```
 
 ### 快捷腳本（可選）
@@ -78,40 +105,49 @@ docker compose ps
 
 # 查看日誌
 docker compose logs wordpress
+docker compose logs wordpress2
 docker compose logs db
+docker compose logs db2
 
 # 重啟容器
 docker compose restart wordpress
+docker compose restart wordpress2
 ```
 
 ### 插件開發
 ```bash
 # 啟用開發中的插件
 docker compose run --rm wpcli wp plugin activate wp-hreflang-manager
+docker compose run --rm wpcli2 wp plugin activate wp-hreflang-manager
 
 # 查看插件狀態
 docker compose run --rm wpcli wp plugin status wp-hreflang-manager
+docker compose run --rm wpcli2 wp plugin status wp-hreflang-manager
 
 # 停用插件
 docker compose run --rm wpcli wp plugin deactivate wp-hreflang-manager
+docker compose run --rm wpcli2 wp plugin deactivate wp-hreflang-manager
 ```
 
 ### 資料庫管理
 ```bash
 # 導出資料庫
 docker compose run --rm wpcli wp db export - > backup.sql
+docker compose run --rm wpcli2 wp db export - > backup-b.sql
 
 # 導入資料庫
 docker compose run --rm wpcli wp db import < backup.sql
+docker compose run --rm wpcli2 wp db import < backup-b.sql
 
 # 搜尋和替換（例如更改域名）
 docker compose run --rm wpcli wp search-replace 'oldurl.com' 'localhost:8080'
+docker compose run --rm wpcli2 wp search-replace 'oldurl.com' 'localhost:8081'
 ```
 
 ## 故障排除
 
 ### 端口已被占用
-如果 8080 端口已被使用，編輯 `docker-compose.yml` 修改：
+如果 8080 或 8081 端口已被使用，編輯 `docker-compose.yml` 修改：
 ```yaml
 ports:
   - "8000:80"  # 改為其他端口

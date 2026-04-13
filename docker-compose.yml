@@ -1,26 +1,26 @@
 services:
-  # MySQL 資料庫
+  # Site A - MySQL 資料庫
   db:
     image: mysql:8.0
     platform: linux/amd64
-    container_name: wp-hreflang-db
+    container_name: wp-hreflang-db-a
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: wordpress
-      MYSQL_DATABASE: wordpress
+      MYSQL_DATABASE: wordpress_a
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: wordpress
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data_a:/var/lib/mysql
     networks:
       - wordpress-network
 
-  # WordPress 主服務
+  # Site A - WordPress 主服務
   wordpress:
     depends_on:
       - db
     image: wordpress:latest
-    container_name: wp-hreflang-wordpress
+    container_name: wp-hreflang-wordpress-a
     restart: unless-stopped
     ports:
       - "8080:80"
@@ -28,7 +28,10 @@ services:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_NAME: wordpress_a
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_HOME', 'http://localhost:8080');
+        define('WP_SITEURL', 'http://localhost:8080');
       # 開發模式配置
       WORDPRESS_DEBUG: 1
       WORDPRESS_DEBUG_LOG: 1
@@ -39,34 +42,101 @@ services:
       # 將當前插件目錄掛載到 WordPress 插件目錄
       - ./:/var/www/html/wp-content/plugins/wp-hreflang-manager
       # WordPress 核心文件
-      - wordpress_data:/var/www/html
+      - wordpress_data_a:/var/www/html
       # 掛載自定義 PHP 配置（用於開發）
       - ./docker/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
     networks:
       - wordpress-network
 
-  # WP-CLI 服務
+  # Site A - WP-CLI 服務
   wpcli:
     depends_on:
       - db
       - wordpress
     image: wordpress:cli
-    container_name: wp-hreflang-wpcli
+    container_name: wp-hreflang-wpcli-a
     user: "33:33"
     volumes:
       - ./:/var/www/html/wp-content/plugins/wp-hreflang-manager
-      - wordpress_data:/var/www/html
+      - wordpress_data_a:/var/www/html
     environment:
       WORDPRESS_DB_HOST: db:3306
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_NAME: wordpress_a
+    networks:
+      - wordpress-network
+
+  # Site B - MySQL 資料庫
+  db2:
+    image: mysql:8.0
+    platform: linux/amd64
+    container_name: wp-hreflang-db-b
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: wordpress
+      MYSQL_DATABASE: wordpress_b
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
+    volumes:
+      - db_data_b:/var/lib/mysql
+    networks:
+      - wordpress-network
+
+  # Site B - WordPress 主服務
+  wordpress2:
+    depends_on:
+      - db2
+    image: wordpress:latest
+    container_name: wp-hreflang-wordpress-b
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      WORDPRESS_DB_HOST: db2:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress_b
+      WORDPRESS_CONFIG_EXTRA: |
+        define('WP_HOME', 'http://localhost:8081');
+        define('WP_SITEURL', 'http://localhost:8081');
+      # 開發模式配置
+      WORDPRESS_DEBUG: 1
+      WORDPRESS_DEBUG_LOG: 1
+      WORDPRESS_DEBUG_DISPLAY: 1
+      SCRIPT_DEBUG: 1
+      SAVEQUERIES: 1
+    volumes:
+      - ./:/var/www/html/wp-content/plugins/wp-hreflang-manager
+      - wordpress_data_b:/var/www/html
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/custom.ini:ro
+    networks:
+      - wordpress-network
+
+  # Site B - WP-CLI 服務
+  wpcli2:
+    depends_on:
+      - db2
+      - wordpress2
+    image: wordpress:cli
+    container_name: wp-hreflang-wpcli-b
+    user: "33:33"
+    volumes:
+      - ./:/var/www/html/wp-content/plugins/wp-hreflang-manager
+      - wordpress_data_b:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: db2:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress_b
     networks:
       - wordpress-network
 
 volumes:
-  db_data:
-  wordpress_data:
+  db_data_a:
+  wordpress_data_a:
+  db_data_b:
+  wordpress_data_b:
 
 networks:
   wordpress-network:

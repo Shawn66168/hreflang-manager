@@ -1,8 +1,10 @@
 # 🚀 WordPress 外掛開發環境 - 快速啟動
 
 ## 環境狀態
-✅ **WordPress**: http://localhost:8080  
-✅ **後台**: http://localhost:8080/wp-admin (admin / admin123)  
+✅ **WordPress Site A**: http://localhost:8080  
+✅ **後台 Site A**: http://localhost:8080/wp-admin (admin / admin123)  
+✅ **WordPress Site B**: http://localhost:8081  
+✅ **後台 Site B**: http://localhost:8081/wp-admin (admin / admin123)  
 ✅ **您的外掛**: wp-hreflang-manager (已啟用)  
 ✅ **調試工具**: Query Monitor (已安裝)  
 ✅ **WP-CLI**: 已配置  
@@ -62,6 +64,9 @@ docker compose down
 wp plugin list
 wp option get hreflang_settings
 wp cache flush
+
+# Site B
+docker compose run --rm wpcli2 wp plugin list
 ```
 
 ### 外掛管理
@@ -81,6 +86,7 @@ docker compose run --rm wpcli wp plugin activate wp-hreflang-manager/hreflang-ma
 
 # 或手動創建文章
 docker compose run --rm wpcli wp post create --post_title="測試" --post_status=publish
+docker compose run --rm wpcli2 wp post create --post_title="站點B測試" --post_status=publish
 ```
 
 ### 容器管理
@@ -163,9 +169,10 @@ docker compose up -d
 
 1. **訪問網站**: http://localhost:8080
 2. **登入後台**: http://localhost:8080/wp-admin (admin / admin123)
-3. **找到您的外掛**: 外掛 → 已安裝的外掛 → Hreflang Manager
-4. **開始編輯**: 在 VS Code 中修改 `src/` 目錄的文件
-5. **測試功能**: 使用 WP-CLI 或瀏覽器測試
+3. **開啟第二站**: http://localhost:8081/wp-admin (admin / admin123)
+4. **找到您的外掛**: 外掛 → 已安裝的外掛 → Hreflang Manager
+5. **開始編輯**: 在 VS Code 中修改 `src/` 目錄的文件
+6. **測試跨站**: 兩站各自建立對應頁面並互填 URL
 
 ---
 
