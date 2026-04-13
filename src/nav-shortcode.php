@@ -24,7 +24,8 @@ add_action('init', 'hreflang_register_shortcode');
  * 使用方式:
  * - [hreflang_switcher] - 預設外觀
  * - [hreflang_switcher theme="dark-header"] - 使用指定外觀組別
- * - [hreflang_switcher style="list"] - 清單樣式
+ * - [hreflang_switcher type="list"] - 清單樣式
+ * - [hreflang_switcher type="dropdown"] - 下拉樣式
  *
  * @param array $atts 短碼屬性
  * @return string HTML 輸出
@@ -33,8 +34,16 @@ function hreflang_switcher_shortcode($atts) {
     $atts = shortcode_atts([
         'class' => '',
         'style' => 'dropdown',
+        'type' => '',
         'theme' => 'default',
     ], $atts, 'hreflang_switcher');
+
+    // type 為新參數；style 為舊參數（向下相容）
+    $raw_type = !empty($atts['type']) ? $atts['type'] : $atts['style'];
+    $switcher_type = strtolower(sanitize_key($raw_type));
+    if (!in_array($switcher_type, ['dropdown', 'list'], true)) {
+        $switcher_type = 'dropdown';
+    }
 
     // 清理 theme 名稱，只允許英數字、dash、underscore
     $theme = preg_replace('/[^a-z0-9\-_]/', '', strtolower(sanitize_key($atts['theme'])));
@@ -80,7 +89,7 @@ function hreflang_switcher_shortcode($atts) {
     // non-default theme 加上 hrl-theme-{name} 讓 scoped CSS 生效
     ob_start();
 
-    if ($atts['style'] === 'dropdown') {
+    if ($switcher_type === 'dropdown') {
         $wrapper_class = 'pww-navlang';
         if ($theme !== 'default') {
             $wrapper_class .= ' hrl-theme-' . esc_attr($theme);

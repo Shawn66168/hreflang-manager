@@ -536,7 +536,8 @@ function hreflang_render_settings_page() {
             <li>設定您網站支援的所有語言版本</li>
             <li>在文章/頁面編輯時，填寫各語言的對應 URL（使用 ACF 欄位或自訂欄位）</li>
             <li>在分類/標籤編輯頁面，填寫對應語言的 URL</li>
-            <li>使用短碼 <code>[hreflang_switcher]</code> 顯示預設外觀，或 <code>[hreflang_switcher theme="dark-header"]</code> 指定外觀組別</li>
+            <li>使用短碼 <code>[hreflang_switcher]</code> 顯示預設下拉選單，或 <code>[hreflang_switcher type="list"]</code> 使用列表樣式</li>
+            <li>可搭配外觀組別：<code>[hreflang_switcher type="dropdown" theme="dark-header"]</code></li>
         </ol>
     </div>
     
