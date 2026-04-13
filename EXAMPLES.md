@@ -127,7 +127,87 @@ Domain: www.example.jp
 
 ---
 
-## 範例 5：在主題中使用
+## 範例 5：多組外觀主題（theme 參數）
+
+### 情境
+同一個網站的頁首、頁尾、側邊欄設計不同，希望語言切換器套用不同外觀。
+
+1. **前往設定頁面**（設定 → Hreflang Languages）
+
+2. **在「切換器外觀設定」新增組別**
+
+例如建立以下組別：
+
+```
+default
+dark-header
+footer
+```
+
+3. **分別設定每個組別的顏色與圓角**
+
+- `default`：一般頁面預設樣式
+- `dark-header`：深色頁首使用
+- `footer`：頁尾或次要區塊使用
+
+4. **在不同位置插入不同短碼**
+
+```php
+[hreflang_switcher]
+[hreflang_switcher theme="dark-header"]
+[hreflang_switcher style="list" theme="footer"]
+```
+
+### 使用說明
+
+- 不帶 `theme` 時，會使用 `default` 組別
+- `theme="dark-header"` 會套用 `dark-header` 的外觀設定
+- `style` 與 `theme` 可同時使用
+
+### 實際版型範例
+
+```html
+<header class="site-header">
+    [hreflang_switcher theme="dark-header"]
+</header>
+
+<aside class="sidebar-box">
+    [hreflang_switcher]
+</aside>
+
+<footer class="site-footer">
+    [hreflang_switcher style="list" theme="footer"]
+</footer>
+```
+
+這樣同一站就能在不同區塊使用不同視覺風格，而不需要額外寫多組短碼元件。
+
+---
+
+## 範例 6：同一頁放兩個不同切換器
+
+### 情境
+桌面版頁首使用下拉樣式，頁尾使用清單樣式，且兩者顏色不同。
+
+```html
+<div class="desktop-header-switcher">
+    [hreflang_switcher style="dropdown" theme="dark-header"]
+</div>
+
+<div class="footer-switcher">
+    [hreflang_switcher style="list" theme="footer"]
+</div>
+```
+
+### 建議做法
+
+- `dark-header`：按鈕背景深色、文字白色
+- `footer`：邊框淡色、active 顏色較低調
+- 若頁面主內容也要顯示切換器，可直接使用 `[hreflang_switcher]`
+
+---
+
+## 範例 7：在主題中使用
 
 ### 在 header.php 中加入
 
@@ -174,7 +254,7 @@ if (function_exists('hreflang_switcher_shortcode')) {
 
 ---
 
-## 範例 6：首頁設定（x-default）
+## 範例 8：首頁設定（x-default）
 
 ### 情境
 您希望首頁輸出 x-default hreflang。
@@ -197,7 +277,7 @@ if (function_exists('hreflang_switcher_shortcode')) {
 
 ---
 
-## 範例 7：使用過濾器自訂
+## 範例 9：使用過濾器自訂
 
 ### 自動從路徑生成 URL
 
@@ -232,7 +312,7 @@ add_filter('hreflang_alternate_urls', function($urls, $object) {
 
 ---
 
-## 範例 8：新增更多語言
+## 範例 10：新增更多語言
 
 ### 情境
 您要新增西班牙文支援。
@@ -261,7 +341,7 @@ Domain: www.example.es
 
 ---
 
-## 範例 9：停用特定語言
+## 範例 11：停用特定語言
 
 ### 情境
 日文版本暫時停用維護。
@@ -281,7 +361,7 @@ Domain: www.example.es
 
 ---
 
-## 範例 10：與現有多語外掛整合
+## 範例 12：與現有多語外掛整合
 
 ### 整合 WPML
 
