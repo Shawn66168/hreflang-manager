@@ -32,6 +32,7 @@ function hreflang_output_hreflang() {
     
     // 偵測當前站點語言
     $current_lang = hreflang_detect_current_language();
+    $current_hreflang = hreflang_get_hreflang_code($current_lang);
     
     // 取得當前頁面 URL
     $current_url = hreflang_get_current_url();
@@ -45,7 +46,7 @@ function hreflang_output_hreflang() {
     // 1. 輸出當前頁面自己的 hreflang
     printf(
         '<link rel="alternate" hreflang="%s" href="%s" />'."\n",
-        esc_attr($current_lang),
+        esc_attr($current_hreflang),
         esc_url($current_url)
     );
     
@@ -63,9 +64,10 @@ function hreflang_output_hreflang() {
     
     foreach ($alternate_urls as $lang_code => $url) {
         if (!empty($url)) {
+            $hreflang_code = hreflang_get_hreflang_code($lang_code);
             printf(
                 '<link rel="alternate" hreflang="%s" href="%s" />'."\n",
-                esc_attr($lang_code),
+                esc_attr($hreflang_code),
                 esc_url(hreflang_normalize_url($url))
             );
         }

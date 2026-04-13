@@ -42,6 +42,93 @@ function hreflang_get_languages() {
 }
 
 /**
+ * 正規化 locale / hreflang 代碼大小寫與格式。
+ *
+ * 支援格式：en, en-US, zh-Hant, zh-Hant-TW, es-419。
+ *
+ * @param string $locale
+ * @param string $fallback
+ * @return string
+ */
+function hreflang_sanitize_locale_code($locale, $fallback = '') {
+    $value = trim(str_replace('_', '-', (string) $locale));
+    if ($value === '') {
+        $value = trim(str_replace('_', '-', (string) $fallback));
+    }
+
+    if ($value === '') {
+        return '';
+    }
+
+    $parts = explode('-', $value);
+    if (empty($parts[0]) || !preg_match('/^[A-Za-z]{2,3}$/', $parts[0])) {
+        return '';
+    }
+
+    $normalized = [strtolower($parts[0])];
+    $index = 1;
+
+    if (isset($parts[$index]) && preg_match('/^[A-Za-z]{4}$/', $parts[$index])) {
+        $normalized[] = ucfirst(strtolower($parts[$index]));
+        $index++;
+    }
+
+    if (isset($parts[$index])) {
+        if (preg_match('/^[A-Za-z]{2}$/', $parts[$index])) {
+            $normalized[] = strtoupper($parts[$index]);
+            $index++;
+        } elseif (preg_match('/^[0-9]{3}$/', $parts[$index])) {
+            $normalized[] = $parts[$index];
+            $index++;
+        }
+    }
+
+    if (count($parts) !== $index) {
+        return '';
+    }
+
+    return implode('-', $normalized);
+}
+
+/**
+ * 依語言代碼取得完整語言設定。
+ *
+ * @param string $lang_code
+ * @return array|null
+ */
+function hreflang_get_language_by_code($lang_code) {
+    $languages = hreflang_get_languages();
+
+    foreach ($languages as $lang) {
+        if (($lang['code'] ?? '') === $lang_code) {
+            return $lang;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * 取得語言對應的標準 hreflang 代碼。
+ *
+ * @param array|string $language 語言設定陣列或語言代碼
+ * @return string
+ */
+function hreflang_get_hreflang_code($language) {
+    if (is_array($language)) {
+        return hreflang_sanitize_locale_code($language['locale'] ?? '', $language['code'] ?? '');
+    }
+
+    $lang_code = (string) $language;
+    $lang = hreflang_get_language_by_code($lang_code);
+    if (is_array($lang)) {
+        return hreflang_sanitize_locale_code($lang['locale'] ?? '', $lang['code'] ?? '');
+    }
+
+    return hreflang_sanitize_locale_code($lang_code, $lang_code);
+}
+
+/**
  * 取得當前頁面的所有語言對應 URL
  * 
  * @return array 語言代碼 => URL 的對應陣列
@@ -307,12 +394,9 @@ function hreflang_detect_current_language() {
  * @return string
  */
 function hreflang_get_language_label($lang_code) {
-    $languages = hreflang_get_languages();
-    
-    foreach ($languages as $lang) {
-        if ($lang['code'] === $lang_code) {
-            return $lang['label'];
-        }
+    $lang = hreflang_get_language_by_code($lang_code);
+    if (is_array($lang)) {
+        return $lang['label'];
     }
     
     return strtoupper($lang_code);

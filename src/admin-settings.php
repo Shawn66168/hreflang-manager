@@ -55,7 +55,7 @@ function hreflang_sanitize_languages($input) {
         
         $sanitized[] = [
             'code' => sanitize_text_field($lang['code']),
-            'locale' => sanitize_text_field($lang['locale'] ?? ''),
+            'locale' => hreflang_sanitize_locale_code($lang['locale'] ?? '', $lang['code'] ?? ''),
             'domain' => esc_url_raw($lang['domain'] ?? ''),
             'label' => sanitize_text_field($lang['label'] ?? ''),
             'active' => !empty($lang['active']),
@@ -69,6 +69,149 @@ function hreflang_sanitize_languages($input) {
     });
     
     return $sanitized;
+}
+
+/**
+ * 取得常用全球 hreflang / locale 選單。
+ *
+ * @return array<string, array<string, string>>
+ */
+function hreflang_get_locale_catalog() {
+    return [
+        '全球常用' => [
+            'en-US' => 'English (United States)',
+            'en-GB' => 'English (United Kingdom)',
+            'zh-Hant' => 'Chinese Traditional',
+            'zh-Hans' => 'Chinese Simplified',
+            'ja-JP' => 'Japanese (Japan)',
+            'ko-KR' => 'Korean (South Korea)',
+            'fr-FR' => 'French (France)',
+            'de-DE' => 'German (Germany)',
+            'es-ES' => 'Spanish (Spain)',
+            'pt-BR' => 'Portuguese (Brazil)',
+        ],
+        'English' => [
+            'en-US' => 'English (United States)',
+            'en-GB' => 'English (United Kingdom)',
+            'en-AU' => 'English (Australia)',
+            'en-CA' => 'English (Canada)',
+            'en-IN' => 'English (India)',
+            'en-SG' => 'English (Singapore)',
+            'en-NZ' => 'English (New Zealand)',
+            'en-ZA' => 'English (South Africa)',
+            'en-IE' => 'English (Ireland)',
+        ],
+        '中文 / East Asia' => [
+            'zh-Hant' => 'Chinese Traditional',
+            'zh-Hant-TW' => 'Chinese Traditional (Taiwan)',
+            'zh-Hant-HK' => 'Chinese Traditional (Hong Kong)',
+            'zh-Hans' => 'Chinese Simplified',
+            'zh-Hans-CN' => 'Chinese Simplified (China)',
+            'zh-Hans-SG' => 'Chinese Simplified (Singapore)',
+            'ja-JP' => 'Japanese (Japan)',
+            'ko-KR' => 'Korean (South Korea)',
+        ],
+        'Europe' => [
+            'fr-FR' => 'French (France)',
+            'fr-CA' => 'French (Canada)',
+            'fr-CH' => 'French (Switzerland)',
+            'de-DE' => 'German (Germany)',
+            'de-AT' => 'German (Austria)',
+            'de-CH' => 'German (Switzerland)',
+            'es-ES' => 'Spanish (Spain)',
+            'it-IT' => 'Italian (Italy)',
+            'nl-NL' => 'Dutch (Netherlands)',
+            'nl-BE' => 'Dutch (Belgium)',
+            'pt-PT' => 'Portuguese (Portugal)',
+            'sv-SE' => 'Swedish (Sweden)',
+            'no-NO' => 'Norwegian (Norway)',
+            'da-DK' => 'Danish (Denmark)',
+            'fi-FI' => 'Finnish (Finland)',
+            'pl-PL' => 'Polish (Poland)',
+            'cs-CZ' => 'Czech (Czech Republic)',
+            'sk-SK' => 'Slovak (Slovakia)',
+            'hu-HU' => 'Hungarian (Hungary)',
+            'ro-RO' => 'Romanian (Romania)',
+            'bg-BG' => 'Bulgarian (Bulgaria)',
+            'el-GR' => 'Greek (Greece)',
+            'tr-TR' => 'Turkish (Turkey)',
+            'uk-UA' => 'Ukrainian (Ukraine)',
+            'ru-RU' => 'Russian (Russia)',
+        ],
+        'Americas' => [
+            'en-US' => 'English (United States)',
+            'en-CA' => 'English (Canada)',
+            'fr-CA' => 'French (Canada)',
+            'es-MX' => 'Spanish (Mexico)',
+            'es-AR' => 'Spanish (Argentina)',
+            'es-CL' => 'Spanish (Chile)',
+            'es-CO' => 'Spanish (Colombia)',
+            'es-PE' => 'Spanish (Peru)',
+            'es-419' => 'Spanish (Latin America)',
+            'pt-BR' => 'Portuguese (Brazil)',
+        ],
+        'Asia Pacific' => [
+            'hi-IN' => 'Hindi (India)',
+            'bn-BD' => 'Bengali (Bangladesh)',
+            'ur-PK' => 'Urdu (Pakistan)',
+            'th-TH' => 'Thai (Thailand)',
+            'vi-VN' => 'Vietnamese (Vietnam)',
+            'id-ID' => 'Indonesian (Indonesia)',
+            'ms-MY' => 'Malay (Malaysia)',
+            'tl-PH' => 'Filipino (Philippines)',
+            'ta-IN' => 'Tamil (India)',
+            'te-IN' => 'Telugu (India)',
+            'mr-IN' => 'Marathi (India)',
+        ],
+        'Middle East / Africa' => [
+            'ar' => 'Arabic',
+            'ar-SA' => 'Arabic (Saudi Arabia)',
+            'ar-AE' => 'Arabic (United Arab Emirates)',
+            'he-IL' => 'Hebrew (Israel)',
+            'fa-IR' => 'Persian (Iran)',
+            'af-ZA' => 'Afrikaans (South Africa)',
+            'sw-KE' => 'Swahili (Kenya)',
+            'am-ET' => 'Amharic (Ethiopia)',
+        ],
+    ];
+}
+
+/**
+ * 產生 locale / hreflang 下拉選單 HTML。
+ *
+ * @param string $name
+ * @param string $selected
+ * @return string
+ */
+function hreflang_get_locale_select_html($name, $selected = '') {
+    $selected = hreflang_sanitize_locale_code($selected);
+    $catalog = hreflang_get_locale_catalog();
+    $known_codes = [];
+    $html = '<select name="' . esc_attr($name) . '" class="hrl-locale-select">';
+    $html .= '<option value="">請選擇 hreflang / Locale</option>';
+
+    foreach ($catalog as $group => $items) {
+        foreach (array_keys($items) as $code) {
+            $known_codes[$code] = true;
+        }
+    }
+
+    if (!empty($selected) && !isset($known_codes[$selected])) {
+        $html .= '<option value="' . esc_attr($selected) . '" selected="selected">自訂目前值 (' . esc_html($selected) . ')</option>';
+    }
+
+    foreach ($catalog as $group => $items) {
+        $html .= '<optgroup label="' . esc_attr($group) . '">';
+        foreach ($items as $code => $label) {
+            $html .= '<option value="' . esc_attr($code) . '" ' . selected($selected, $code, false) . '>';
+            $html .= esc_html($label . ' [' . $code . ']');
+            $html .= '</option>';
+        }
+        $html .= '</optgroup>';
+    }
+
+    $html .= '</select>';
+    return $html;
 }
 
 /**
@@ -125,7 +268,7 @@ function hreflang_render_settings_page() {
             foreach ($_POST['languages'] as $index => $lang) {
                 $languages[] = [
                     'code' => sanitize_text_field($lang['code']),
-                    'locale' => sanitize_text_field($lang['locale']),
+                    'locale' => hreflang_sanitize_locale_code($lang['locale'] ?? '', $lang['code'] ?? ''),
                     'domain' => esc_url_raw($lang['domain']),
                     'label' => sanitize_text_field($lang['label']),
                     'active' => isset($lang['active']),
@@ -210,6 +353,7 @@ function hreflang_render_settings_page() {
     
     $languages = get_option('hreflang_languages', []);
     $default_lang = get_option('hreflang_default_lang', 'en');
+    $locale_select_template = hreflang_get_locale_select_html('languages[__INDEX__][locale]');
     
     ?>
     <div class="wrap">
@@ -223,7 +367,7 @@ function hreflang_render_settings_page() {
                     <tr>
                         <th>順序</th>
                         <th>語言代碼</th>
-                        <th>Locale</th>
+                        <th>Locale / hreflang</th>
                         <th>Domain</th>
                         <th>顯示名稱</th>
                         <th>啟用</th>
@@ -245,9 +389,10 @@ function hreflang_render_settings_page() {
                                            placeholder="en" required />
                                 </td>
                                 <td>
-                                    <input type="text" name="languages[<?php echo $index; ?>][locale]" 
-                                           value="<?php echo esc_attr($lang['locale']); ?>" 
-                                           placeholder="en-US" />
+                                    <?php echo hreflang_get_locale_select_html('languages[' . $index . '][locale]', $lang['locale']); ?>
+                                    <div class="description hrl-locale-note">
+                                        <code class="hrl-locale-preview"><?php echo esc_html('hreflang="' . hreflang_get_hreflang_code($lang) . '"'); ?></code>
+                                    </div>
                                 </td>
                                 <td>
                                     <input type="text" name="languages[<?php echo $index; ?>][domain]" 
@@ -404,7 +549,7 @@ function hreflang_render_settings_page() {
                 <tr class="language-row">
                     <td><input type="number" name="languages[${langIndex}][order]" value="${langIndex + 1}" style="width: 60px;" /></td>
                     <td><input type="text" name="languages[${langIndex}][code]" placeholder="en" required /></td>
-                    <td><input type="text" name="languages[${langIndex}][locale]" placeholder="en-US" /></td>
+                    <td>${localeSelectTemplate.replace(/__INDEX__/g, langIndex)}<div class="description hrl-locale-note"><code class="hrl-locale-preview">hreflang=""</code></div></td>
                     <td><input type="text" name="languages[${langIndex}][domain]" placeholder="example.com" style="width: 200px;" /></td>
                     <td><input type="text" name="languages[${langIndex}][label]" placeholder="English" /></td>
                     <td><input type="checkbox" name="languages[${langIndex}][active]" checked /></td>
@@ -417,6 +562,25 @@ function hreflang_render_settings_page() {
         
         $(document).on('click', '.remove-language', function() {
             $(this).closest('tr').remove();
+        });
+
+        function updateLocalePreview(row) {
+            const select = row.find('.hrl-locale-select');
+            const preview = row.find('.hrl-locale-preview');
+            if (!select.length || !preview.length) return;
+
+            const value = $.trim(select.val());
+            preview.text(value ? 'hreflang="' + value + '"' : 'hreflang=""');
+        }
+
+        const localeSelectTemplate = <?php echo wp_json_encode($locale_select_template); ?>;
+
+        $(document).on('change', '.hrl-locale-select', function() {
+            updateLocalePreview($(this).closest('tr'));
+        });
+
+        $('.language-row').each(function() {
+            updateLocalePreview($(this));
         });
     });
     </script>
@@ -444,6 +608,9 @@ function hreflang_render_settings_page() {
         width: 100%;
         max-width: 200px;
     }
+    .hrl-locale-select { width: 100%; max-width: 240px; }
+    .hrl-locale-note { margin-top: 6px; }
+    .hrl-locale-preview { font-size: 12px; }
     .hrl-color { width:46px; height:32px; padding:2px; cursor:pointer; border:1px solid #ddd; border-radius:3px 0 0 3px; border-right:0; vertical-align:middle; box-sizing:border-box; }
     .hrl-hex { width:82px; height:32px; font-size:12px; font-family:monospace; padding:0 6px; border:1px solid #ddd; border-radius:0 3px 3px 0; vertical-align:middle; box-sizing:border-box; text-transform:lowercase; }
     .hrl-hex:focus { outline:none; border-color:#007cba; box-shadow:0 0 0 1px #007cba; z-index:1; position:relative; }

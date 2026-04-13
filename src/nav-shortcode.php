@@ -57,8 +57,9 @@ function hreflang_switcher_shortcode($atts) {
         }
 
         $lang_data[$lang['code']] = [
-            'label' => $lang['label'],
-            'url'   => hreflang_normalize_url($url),
+            'label'    => $lang['label'],
+            'url'      => hreflang_normalize_url($url),
+            'hreflang' => hreflang_get_hreflang_code($lang),
         ];
     }
 
@@ -93,7 +94,7 @@ function hreflang_switcher_shortcode($atts) {
             <ul class="pww-navlang__menu" aria-hidden="true">
                 <?php foreach ($other_langs as $lang_code => $data) : ?>
                     <li>
-                        <a hreflang="<?php echo esc_attr($lang_code); ?>"
+                                <a hreflang="<?php echo esc_attr($data['hreflang']); ?>"
                            href="<?php echo esc_url($data['url']); ?>">
                             <?php echo esc_html($data['label']); ?>
                         </a>
@@ -146,7 +147,7 @@ function hreflang_switcher_shortcode($atts) {
             printf(
                 '<a href="%s" class="hreflang-lang-link" hreflang="%s">%s</a>',
                 esc_url($data['url']),
-                esc_attr($lang_code),
+                esc_attr($data['hreflang']),
                 esc_html($data['label'])
             );
             echo '</li>';
