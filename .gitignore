@@ -62,3 +62,6 @@ RENAME_COMPLETE.md
 RENAMING.md
 WORDPRESS_ORG_COMPLIANCE.md
 PROJECT_SUMMARY.md
+
+# 遠端站點設定（含主機資訊，不入庫）
+wp-cli.yml

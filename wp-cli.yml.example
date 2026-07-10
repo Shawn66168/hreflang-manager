@@ -1,0 +1,31 @@
+# wp-cli 遠端站點別名範本
+#
+# 複製為 wp-cli.yml 並填入實際主機資訊後，即可用 CLI 管理多站：
+#   wp @site-a plugin list
+#   wp @all plugin activate hreflang-manager
+#   wp @all option update hreflang_auto_same_slug 1
+#
+# 注意：wp-cli.yml 含主機資訊，已列入 .gitignore，不要提交。
+# 前提：各主機可 SSH 且裝有 wp-cli；path 填 WordPress 安裝目錄。
+
+@site-a:
+  ssh: user@host-a.example.com
+  path: /var/www/html
+
+@site-b:
+  ssh: user@host-b.example.com
+  path: /var/www/html
+
+@site-c:
+  ssh: user@host-c.example.com
+  path: /var/www/html
+
+@site-d:
+  ssh: user@host-d.example.com
+  path: /var/www/html
+
+@all:
+  - @site-a
+  - @site-b
+  - @site-c
+  - @site-d
