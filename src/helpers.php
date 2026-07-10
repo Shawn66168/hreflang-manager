@@ -293,8 +293,62 @@ function hreflang_get_current_url() {
 }
 
 /**
+ * 是否啟用「同 slug 自動對應」
+ *
+ * @return bool
+ */
+function hreflang_is_auto_same_slug_enabled() {
+    return (bool) get_option('hreflang_auto_same_slug', false);
+}
+
+/**
+ * 取得文章在指定語言的對應 URL。
+ * 手動填寫的 meta 優先；啟用「同 slug 自動對應」時，
+ * 未填寫的語言以「該語言網域＋相同路徑」自動產生。
+ *
+ * @param int   $post_id
+ * @param array $lang 語言設定陣列
+ * @return string 找不到對應時回傳空字串
+ */
+function hreflang_get_post_language_url($post_id, $lang) {
+    $meta = get_post_meta($post_id, 'alt_' . $lang['code'] . '_url', true);
+    if (!empty($meta)) {
+        return $meta;
+    }
+
+    if (!hreflang_is_auto_same_slug_enabled()) {
+        return '';
+    }
+
+    return hreflang_build_same_slug_url($post_id, $lang);
+}
+
+/**
+ * 以「該語言網域＋相同路徑」組出自動對應 URL。
+ * 非固定網址（?p=N）沒有可對應的 slug，回傳空字串。
+ *
+ * @param int   $post_id
+ * @param array $lang
+ * @return string
+ */
+function hreflang_build_same_slug_url($post_id, $lang) {
+    if (empty($lang['domain'])) {
+        return '';
+    }
+
+    $parsed = wp_parse_url(get_permalink($post_id));
+    $path = $parsed['path'] ?? '';
+
+    if ($path === '' || $path === '/' || !empty($parsed['query'])) {
+        return '';
+    }
+
+    return untrailingslashit($lang['domain']) . $path;
+}
+
+/**
  * 檢查文章或 term 是否缺少對應語言 URL
- * 
+ *
  * @param int    $object_id   物件 ID
  * @param string $object_type 'post' 或 'term'
  * @return array 缺少的語言代碼陣列

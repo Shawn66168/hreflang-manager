@@ -16,10 +16,25 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 /**
  * 執行卸載清理作業
  */
-function hreflang_manager_uninstall_cleanup() {
-    // 刪除外掛設定選項
+function hreflang_manager_delete_options() {
     delete_option('hreflang_languages');
     delete_option('hreflang_default_lang');
+    delete_option('hreflang_auto_same_slug');
+    delete_option('hreflang_switcher_styles');
+
+    // 外觀主題（每組一個 option）
+    $themes = get_option('hreflang_style_themes', []);
+    if (is_array($themes)) {
+        foreach ($themes as $theme) {
+            delete_option('hreflang_switcher_styles_' . $theme);
+        }
+    }
+    delete_option('hreflang_style_themes');
+}
+
+function hreflang_manager_uninstall_cleanup() {
+    // 刪除外掛設定選項
+    hreflang_manager_delete_options();
 
     // 多站點環境：逐一清理各子站資料
     if (is_multisite()) {
@@ -31,8 +46,7 @@ function hreflang_manager_uninstall_cleanup() {
         foreach ($blog_ids as $blog_id) {
             switch_to_blog($blog_id);
 
-            delete_option('hreflang_languages');
-            delete_option('hreflang_default_lang');
+            hreflang_manager_delete_options();
 
             // 如需清理 post meta，請取消以下注解
             // hreflang_manager_cleanup_post_meta();

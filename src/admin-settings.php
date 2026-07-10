@@ -249,6 +249,25 @@ function hreflang_sanitize_switcher_styles($input) {
         }
     }
 
+    if (isset($input['font_weight'])) {
+        $val = sanitize_text_field($input['font_weight']);
+        if (preg_match('/^(normal|bold|[1-9]00)$/', $val)) {
+            $sanitized['font_weight'] = $val;
+        }
+    }
+
+    // padding / margin：1~4 個 CSS 長度值（如 "0.5rem 1rem"）
+    $spacing_fields = ['btn_padding', 'btn_margin', 'menu_padding', 'link_padding'];
+    $length = '(\d*\.)?\d+(px|rem|em|%)?';
+    foreach ($spacing_fields as $field) {
+        if (isset($input[$field])) {
+            $val = trim(sanitize_text_field($input[$field]));
+            if (preg_match('/^' . $length . '(\s+' . $length . '){0,3}$/', $val)) {
+                $sanitized[$field] = $val;
+            }
+        }
+    }
+
     return $sanitized;
 }
 
@@ -279,7 +298,8 @@ function hreflang_render_settings_page() {
         
         update_option('hreflang_languages', $languages);
         update_option('hreflang_default_lang', sanitize_text_field($_POST['default_lang'] ?? 'en'));
-        
+        update_option('hreflang_auto_same_slug', isset($_POST['auto_same_slug']) ? 1 : 0);
+
         echo '<div class="notice notice-success"><p>設定已儲存。</p></div>';
     }
 
@@ -428,11 +448,20 @@ function hreflang_render_settings_page() {
             <h2>預設語言</h2>
             <p>
                 <label for="default_lang">預設語言代碼（用於 x-default）：</label>
-                <input type="text" id="default_lang" name="default_lang" 
-                       value="<?php echo esc_attr($default_lang); ?>" 
+                <input type="text" id="default_lang" name="default_lang"
+                       value="<?php echo esc_attr($default_lang); ?>"
                        placeholder="en" />
             </p>
-            
+
+            <h2>同 slug 自動對應</h2>
+            <p>
+                <label>
+                    <input type="checkbox" name="auto_same_slug" <?php checked(hreflang_is_auto_same_slug_enabled()); ?> />
+                    未手動填寫時，自動以「各語言網域＋相同路徑」產生 alternate URL
+                </label>
+            </p>
+            <p class="description">適用於各站固定網址結構相同（slug 一致、只有網域不同）的站群。文章編輯頁手動填寫的 URL 永遠優先；路徑不同的舊文章請逐篇手填。</p>
+
             <?php submit_button('儲存設定', 'primary', 'hreflang_save_languages'); ?>
         </form>
         
@@ -473,8 +502,10 @@ function hreflang_render_settings_page() {
                 $cs = function_exists('hreflang_get_switcher_styles') ? hreflang_get_switcher_styles($theme_name) : [];
                 $cs = wp_parse_args($cs, [
                     'btn_bg'=>'#ffffff','btn_color'=>'#333333','btn_border'=>'#e5e5e5',
-                    'btn_radius'=>'0.5rem','font_size'=>'14px',
-                    'menu_bg'=>'#ffffff','menu_border'=>'#e5e5e5','link_color'=>'#333333','hover_bg'=>'#f9f9f9',
+                    'btn_radius'=>'0.5rem','font_size'=>'14px','font_weight'=>'400',
+                    'btn_padding'=>'0.5rem 1rem','btn_margin'=>'0',
+                    'menu_bg'=>'#ffffff','menu_border'=>'#e5e5e5','menu_padding'=>'0.25rem 0',
+                    'link_color'=>'#333333','link_padding'=>'0.5rem 0.75rem','hover_bg'=>'#f9f9f9',
                     'active_bg'=>'#0073aa','active_color'=>'#ffffff','active_border'=>'#0073aa',
                 ]);
             ?>
@@ -501,6 +532,9 @@ function hreflang_render_settings_page() {
                                 <tr><th>邊框色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['btn_border']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][btn_border]" value="<?php echo esc_attr($cs['btn_border']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
                                 <tr><th>圓角</th><td><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][btn_radius]" value="<?php echo esc_attr($cs['btn_radius']); ?>" style="width:90px" placeholder="0.5rem"></td></tr>
                                 <tr><th>字體大小</th><td><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][font_size]" value="<?php echo esc_attr($cs['font_size']); ?>" style="width:90px" placeholder="14px"></td></tr>
+                                <tr><th>字重</th><td><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][font_weight]" value="<?php echo esc_attr($cs['font_weight']); ?>" style="width:90px" placeholder="400 / bold"></td></tr>
+                                <tr><th>內距 padding</th><td><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][btn_padding]" value="<?php echo esc_attr($cs['btn_padding']); ?>" style="width:120px" placeholder="0.5rem 1rem"></td></tr>
+                                <tr><th>外距 margin</th><td><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][btn_margin]" value="<?php echo esc_attr($cs['btn_margin']); ?>" style="width:120px" placeholder="0"></td></tr>
                             </table>
                         </div>
 
@@ -511,6 +545,8 @@ function hreflang_render_settings_page() {
                                 <tr><th>邊框色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['menu_border']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][menu_border]" value="<?php echo esc_attr($cs['menu_border']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
                                 <tr><th>連結色</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['link_color']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][link_color]" value="<?php echo esc_attr($cs['link_color']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
                                 <tr><th>Hover 背景</th><td><input type="color" class="hrl-color" value="<?php echo esc_attr($cs['hover_bg']); ?>"><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][hover_bg]" value="<?php echo esc_attr($cs['hover_bg']); ?>" class="hrl-hex" maxlength="9" spellcheck="false"></td></tr>
+                                <tr><th>選單內距</th><td><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][menu_padding]" value="<?php echo esc_attr($cs['menu_padding']); ?>" style="width:120px" placeholder="0.25rem 0"></td></tr>
+                                <tr><th>項目內距</th><td><input type="text" name="styles_by_theme[<?php echo esc_attr($theme_name); ?>][link_padding]" value="<?php echo esc_attr($cs['link_padding']); ?>" style="width:120px" placeholder="0.5rem 0.75rem"></td></tr>
                             </table>
                         </div>
 

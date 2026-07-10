@@ -59,7 +59,7 @@ function hreflang_switcher_shortcode($atts) {
 
         $url = '';
         if ($post_id) {
-            $url = get_post_meta($post_id, 'alt_' . $lang['code'] . '_url', true);
+            $url = hreflang_get_post_language_url($post_id, $lang);
         }
         if (empty($url)) {
             $url = trailingslashit($lang['domain']);
@@ -194,9 +194,14 @@ function hreflang_get_switcher_styles($theme = 'default') {
         'btn_border'    => '#e5e5e5',
         'btn_radius'    => '0.5rem',
         'font_size'     => '14px',
+        'font_weight'   => '400',
+        'btn_padding'   => '0.5rem 1rem',
+        'btn_margin'    => '0',
         'menu_bg'       => '#ffffff',
         'menu_border'   => '#e5e5e5',
+        'menu_padding'  => '0.25rem 0',
         'link_color'    => '#333333',
+        'link_padding'  => '0.5rem 0.75rem',
         'hover_bg'      => '#f9f9f9',
         'active_bg'     => '#0073aa',
         'active_color'  => '#ffffff',
@@ -227,17 +232,19 @@ function hreflang_build_theme_css($theme, $prefix = '') {
     $f = $s['font_size'];
     $p = $prefix ? $prefix . ' ' : '';
 
-    $css  = "{$p}.pww-navlang{position:relative;display:inline-block}";
-    $css .= "{$p}.pww-navlang__btn{cursor:pointer;padding:.5rem 1rem;border:1px solid {$s['btn_border']};border-radius:{$r};background:{$s['btn_bg']};color:{$s['btn_color']};font-size:{$f}}";
+    $w = $s['font_weight'];
+
+    $css  = "{$p}.pww-navlang{position:relative;display:inline-block;margin:{$s['btn_margin']}}";
+    $css .= "{$p}.pww-navlang__btn{cursor:pointer;padding:{$s['btn_padding']};border:1px solid {$s['btn_border']};border-radius:{$r};background:{$s['btn_bg']};color:{$s['btn_color']};font-size:{$f};font-weight:{$w}}";
     $css .= "{$p}.pww-navlang__btn:hover{background:{$s['hover_bg']}}";
-    $css .= "{$p}.pww-navlang__menu{display:none;position:absolute;right:0;z-index:9999;background:{$s['menu_bg']};border:1px solid {$s['menu_border']};border-radius:{$r};padding:.25rem 0;min-width:10rem;margin-top:.25rem;list-style:none}";
+    $css .= "{$p}.pww-navlang__menu{display:none;position:absolute;right:0;z-index:9999;background:{$s['menu_bg']};border:1px solid {$s['menu_border']};border-radius:{$r};padding:{$s['menu_padding']};min-width:10rem;margin-top:.25rem;list-style:none}";
     $css .= "{$p}.pww-navlang__menu.is-open{display:block}";
     $css .= "{$p}.pww-navlang__menu li{list-style:none;margin:0;padding:0}";
-    $css .= "{$p}.pww-navlang__menu a{display:block;padding:.5rem .75rem;text-decoration:none;color:{$s['link_color']};font-size:{$f}}";
+    $css .= "{$p}.pww-navlang__menu a{display:block;padding:{$s['link_padding']};text-decoration:none;color:{$s['link_color']};font-size:{$f};font-weight:{$w}}";
     $css .= "{$p}.pww-navlang__menu a:hover{background:{$s['hover_bg']}}";
     $css .= "{$p}.hreflang-lang-switcher.hreflang-list{list-style:none;margin:10px 0;padding:0;display:flex;flex-wrap:wrap;gap:10px}";
-    $css .= "{$p}.hreflang-lang-item{display:inline-block}";
-    $css .= "{$p}.hreflang-lang-link{display:inline-block;padding:8px 16px;border:1px solid {$s['btn_border']};border-radius:{$r};background-color:{$s['btn_bg']};color:{$s['btn_color']};text-decoration:none;font-size:{$f};transition:all .3s ease}";
+    $css .= "{$p}.hreflang-lang-item{display:inline-block;margin:{$s['btn_margin']}}";
+    $css .= "{$p}.hreflang-lang-link{display:inline-block;padding:{$s['btn_padding']};border:1px solid {$s['btn_border']};border-radius:{$r};background-color:{$s['btn_bg']};color:{$s['btn_color']};text-decoration:none;font-size:{$f};font-weight:{$w};transition:all .3s ease}";
     $css .= "{$p}.hreflang-lang-link:hover{background-color:{$s['hover_bg']};border-color:#999}";
     $css .= "{$p}.hreflang-lang-item.active .hreflang-lang-link{background-color:{$s['active_bg']};border-color:{$s['active_border']};color:{$s['active_color']};font-weight:bold}";
     return $css;

@@ -108,41 +108,31 @@ function hreflang_get_alt_urls_for_current() {
     $languages = hreflang_get_languages();
     $urls = [];
     
-    // 根據語言建立 meta key 對應（相容舊的 Portwell 命名）
-    $lang_meta_map = [];
-    foreach ($languages as $lang) {
-        if (!$lang['active']) continue;
-        // 支援多種 meta key 格式
-        $lang_meta_map[$lang['code']] = [
-            'post' => 'alt_' . $lang['code'] . '_url',
-            'term' => 'term_alt_' . $lang['code'] . '_url',
-        ];
-    }
-    
     if (is_singular()) {
-        // 文章或頁面
+        // 文章或頁面：手填 meta 優先，未填時可自動以相同路徑對應
         $post_id = get_the_ID();
-        
-        // 取得所有語言的 URL
-        foreach ($lang_meta_map as $code => $keys) {
-            $url = get_post_meta($post_id, $keys['post'], true);
+
+        foreach ($languages as $lang) {
+            if (!$lang['active']) continue;
+            $url = hreflang_get_post_language_url($post_id, $lang);
             if ($url) {
-                $urls[$code] = $url;
+                $urls[$lang['code']] = $url;
             }
         }
-        
+
     } elseif (is_category() || is_tag() || is_tax()) {
         // 支援所有分類頁面（部落格分類/標籤 + 自訂分類 + WooCommerce 分類）
         $term = get_queried_object();
         if ($term && !is_wp_error($term) && !empty($term->term_id)) {
-            foreach ($lang_meta_map as $code => $keys) {
-                $url = get_term_meta($term->term_id, $keys['term'], true);
+            foreach ($languages as $lang) {
+                if (!$lang['active']) continue;
+                $url = get_term_meta($term->term_id, 'term_alt_' . $lang['code'] . '_url', true);
                 if ($url) {
-                    $urls[$code] = $url;
+                    $urls[$lang['code']] = $url;
                 }
             }
         }
-        
+
     } elseif (is_front_page() || is_home()) {
         // 首頁：各語言首頁互為對等頁
         foreach ($languages as $lang) {
@@ -234,8 +224,8 @@ function hreflang_register_post_meta_box() {
             'Hreflang 多語言 URL',
             'hreflang_render_post_meta_box',
             $post_type,
-            'side',
-            'default'
+            'normal',
+            'high'
         );
     }
 }
@@ -255,6 +245,8 @@ function hreflang_render_post_meta_box($post) {
         return;
     }
 
+    $auto_enabled = hreflang_is_auto_same_slug_enabled();
+
     foreach ($languages as $lang) {
         if (empty($lang['active'])) {
             continue;
@@ -264,6 +256,15 @@ function hreflang_render_post_meta_box($post) {
         $value = get_post_meta($post->ID, $meta_key, true);
         $hreflang_code = hreflang_get_hreflang_code($lang);
 
+        // 啟用自動對應時，placeholder 顯示留空將套用的 URL
+        $placeholder = 'https://' . (parse_url($lang['domain'], PHP_URL_HOST) ?: $lang['domain']) . '/...';
+        if ($auto_enabled) {
+            $auto_url = hreflang_build_same_slug_url($post->ID, $lang);
+            if ($auto_url) {
+                $placeholder = '自動：' . $auto_url;
+            }
+        }
+
         echo '<p>';
         printf(
             '<label for="%1$s"><strong>%2$s</strong> <code>[%3$s]</code></label><br>',
@@ -272,15 +273,19 @@ function hreflang_render_post_meta_box($post) {
             esc_html($hreflang_code)
         );
         printf(
-            '<input type="url" id="%1$s" name="%1$s" value="%2$s" class="widefat" placeholder="https://%3$s/..." />',
+            '<input type="url" id="%1$s" name="%1$s" value="%2$s" class="widefat" placeholder="%3$s" />',
             esc_attr($meta_key),
             esc_attr($value),
-            esc_attr(parse_url($lang['domain'], PHP_URL_HOST) ?: $lang['domain'])
+            esc_attr($placeholder)
         );
         echo '</p>';
     }
 
-    echo '<p class="description">每篇文章/頁面可獨立設定各語系對應 URL。</p>';
+    if ($auto_enabled) {
+        echo '<p class="description">留空的欄位會自動以「相同路徑＋該語言網域」輸出（placeholder 所示）；手動填寫則以填寫值優先。舊文章路徑不同時請在此手填。</p>';
+    } else {
+        echo '<p class="description">每篇文章/頁面可獨立設定各語系對應 URL。</p>';
+    }
 }
 
 /**
