@@ -1,5 +1,14 @@
 ﻿# 更新日誌
 
+## [1.4.0] - 2026-07-11
+
+### 新增功能
+- ✅ 「僅本地發布」標記：URL 欄位填 `-` 表示該語言無對應版本——不輸出該語言 hreflang、切換器改連該語言首頁（適用各站選擇性發布的站群）
+- ✅ 分類路徑同步工具：`bin/export-category-map.sh` 從權威站 sitemap 產生「slug,分類路徑」對應表；`scripts/sync-category-paths.php`（wp eval-file）dry-run/apply 兩段式套用——自動建立缺少的分類鏈、re-parent 錯位分類、以 Yoast primary category 修正 permalink，舊網址自動 301
+
+### 變更
+- 文章 URL 欄位（metabox 與 ACF）由 url 型別改為 text，以支援 `-` 標記
+
 ## [1.3.0] - 2026-07-11
 
 ### 新增功能

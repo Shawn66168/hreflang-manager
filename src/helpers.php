@@ -311,7 +311,13 @@ function hreflang_is_auto_same_slug_enabled() {
  * @return string 找不到對應時回傳空字串
  */
 function hreflang_get_post_language_url($post_id, $lang) {
-    $meta = get_post_meta($post_id, 'alt_' . $lang['code'] . '_url', true);
+    $meta = trim((string) get_post_meta($post_id, 'alt_' . $lang['code'] . '_url', true));
+
+    // 「-」＝此語言無對應版本（僅本地發布的文章）：不輸出 hreflang、也不自動對應
+    if ($meta === '-') {
+        return '';
+    }
+
     if (!empty($meta)) {
         return $meta;
     }

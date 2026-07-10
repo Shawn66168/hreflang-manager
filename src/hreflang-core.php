@@ -173,8 +173,8 @@ function hreflang_register_acf_fields() {
             'key' => 'field_alt_' . $lang['code'] . '_url',
             'label' => $lang['label'] . ' URL',
             'name' => 'alt_' . $lang['code'] . '_url',
-            'type' => 'url',
-            'instructions' => '輸入 ' . $lang['label'] . ' 版本的對應 URL',
+            'type' => 'text',
+            'instructions' => '輸入 ' . $lang['label'] . ' 版本的對應 URL；填「-」表示該語言無對應版本',
             'placeholder' => 'https://' . $lang['domain'] . '/...',
         ];
     }
@@ -273,7 +273,7 @@ function hreflang_render_post_meta_box($post) {
             esc_html($hreflang_code)
         );
         printf(
-            '<input type="url" id="%1$s" name="%1$s" value="%2$s" class="widefat" placeholder="%3$s" />',
+            '<input type="text" id="%1$s" name="%1$s" value="%2$s" class="widefat" placeholder="%3$s" />',
             esc_attr($meta_key),
             esc_attr($value),
             esc_attr($placeholder)
@@ -282,9 +282,9 @@ function hreflang_render_post_meta_box($post) {
     }
 
     if ($auto_enabled) {
-        echo '<p class="description">留空的欄位會自動以「相同路徑＋該語言網域」輸出（placeholder 所示）；手動填寫則以填寫值優先。舊文章路徑不同時請在此手填。</p>';
+        echo '<p class="description">留空＝自動以「相同路徑＋該語言網域」輸出（placeholder 所示）；手動填寫以填寫值優先；填 <code>-</code> ＝該語言無對應版本（僅本地發布，該語言不輸出 hreflang）。</p>';
     } else {
-        echo '<p class="description">每篇文章/頁面可獨立設定各語系對應 URL。</p>';
+        echo '<p class="description">每篇文章/頁面可獨立設定各語系對應 URL；填 <code>-</code> 表示該語言無對應版本。</p>';
     }
 }
 
@@ -328,7 +328,8 @@ function hreflang_save_post_meta_fields($post_id) {
             continue;
         }
 
-        update_post_meta($post_id, $meta_key, esc_url_raw($value));
+        // 「-」＝標記此語言無對應版本
+        update_post_meta($post_id, $meta_key, $value === '-' ? '-' : esc_url_raw($value));
     }
 }
 add_action('save_post', 'hreflang_save_post_meta_fields');
