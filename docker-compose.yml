@@ -2,7 +2,6 @@ services:
   # Site A - MySQL 資料庫
   db:
     image: mysql:8.0
-    platform: linux/amd64
     container_name: wp-hreflang-db-a
     restart: unless-stopped
     environment:
@@ -70,7 +69,6 @@ services:
   # Site B - MySQL 資料庫
   db2:
     image: mysql:8.0
-    platform: linux/amd64
     container_name: wp-hreflang-db-b
     restart: unless-stopped
     environment:
