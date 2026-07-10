@@ -25,6 +25,11 @@ add_action('init', 'hreflang_init');
  * 根據原始 Portwell Snippet 的邏輯設計
  */
 function hreflang_output_hreflang() {
+    // 404 與搜尋頁沒有對等的多語言內容，不輸出 hreflang
+    if (is_404() || is_search()) {
+        return;
+    }
+
     // 允許透過過濾器停用輸出（例如在特定頁面）
     if (!apply_filters('hreflang_manager_enable_output', true)) {
         return;
@@ -40,16 +45,22 @@ function hreflang_output_hreflang() {
     if (!$current_url) {
         return;
     }
-    
+
+    // 沒有任何對等頁時不輸出（單獨的自身宣告沒有意義）
+    $alternate_urls = hreflang_get_alt_urls_for_current();
+    if (empty($alternate_urls)) {
+        return;
+    }
+
     echo "\n<!-- Hreflang Manager -->\n";
-    
+
     // 1. 輸出當前頁面自己的 hreflang
     printf(
         '<link rel="alternate" hreflang="%s" href="%s" />'."\n",
         esc_attr($current_hreflang),
         esc_url($current_url)
     );
-    
+
     // 2. 輸出 x-default（只在預設語言的首頁）
     $default_lang = hreflang_get_default_language();
     if ($current_lang === $default_lang && (is_front_page() || is_home())) {
@@ -58,10 +69,8 @@ function hreflang_output_hreflang() {
             esc_url(hreflang_normalize_url(home_url('/')))
         );
     }
-    
+
     // 3. 輸出其他語言的 hreflang
-    $alternate_urls = hreflang_get_alt_urls_for_current();
-    
     foreach ($alternate_urls as $lang_code => $url) {
         if (!empty($url)) {
             $hreflang_code = hreflang_get_hreflang_code($lang_code);
@@ -134,13 +143,14 @@ function hreflang_get_alt_urls_for_current() {
             }
         }
         
-    } else {
-        // Fallback：非單一頁面，沒有對應資料時轉到首頁
+    } elseif (is_front_page() || is_home()) {
+        // 首頁：各語言首頁互為對等頁
         foreach ($languages as $lang) {
             if (!$lang['active']) continue;
             $urls[$lang['code']] = trailingslashit($lang['domain']);
         }
     }
+    // 其他頁面（日期/作者 archive 等）沒有可靠的對等 URL，不輸出 alternate
     
     // 移除當前語言（不輸出自己）
     if (isset($urls[$current_lang])) {
