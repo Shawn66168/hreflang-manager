@@ -215,13 +215,14 @@ function hreflang_get_locale_select_html($name, $selected = '') {
 }
 
 /**
- * 是否為佈景主題 design token 引用（theme.json 暴露的 CSS 變數）
+ * 是否為 design token 引用：
+ * theme.json 的 --wp--preset--*，或 Elementor 全域樣式的 --e-global-*
  *
  * @param string $val
  * @return bool
  */
 function hreflang_is_theme_token($val) {
-    return (bool) preg_match('/^var\(--wp--[a-z0-9\-]+\)$/', $val);
+    return (bool) preg_match('/^var\(--(wp|e-global)-[a-z0-9\-]+\)$/', $val);
 }
 
 /**
@@ -308,30 +309,58 @@ function hreflang_get_theme_palette_select_html() {
         }
     }
 
-    if (empty($groups)) {
-        return '';
-    }
-
-    $html = '<select class="hrl-preset" title="帶入佈景主題色票（Design Token）">';
-    $html .= '<option value="">主題色票…</option>';
+    $options = '';
     foreach ($groups as $label => $colors) {
-        $html .= '<optgroup label="' . esc_attr($label) . '">';
+        $options .= '<optgroup label="' . esc_attr($label) . '">';
         foreach ($colors as $c) {
             if (empty($c['slug'])) {
                 continue;
             }
             $name = !empty($c['name']) ? $c['name'] : $c['slug'];
-            $html .= sprintf(
+            $options .= sprintf(
                 '<option value="var(--wp--preset--color--%1$s)">%2$s</option>',
                 esc_attr($c['slug']),
                 esc_html($name . (!empty($c['color']) ? ' ' . $c['color'] : ''))
             );
         }
-        $html .= '</optgroup>';
+        $options .= '</optgroup>';
     }
-    $html .= '</select>';
 
-    return $html;
+    // Elementor 全域色彩（classic theme + Elementor 站的 design system）
+    if (class_exists('\Elementor\Plugin')) {
+        $kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit();
+        $e_colors = [];
+        if ($kit) {
+            foreach (['system_colors', 'custom_colors'] as $key) {
+                $set = $kit->get_settings($key);
+                if (is_array($set)) {
+                    $e_colors = array_merge($e_colors, $set);
+                }
+            }
+        }
+        if (!empty($e_colors)) {
+            $options .= '<optgroup label="Elementor 全域色彩">';
+            foreach ($e_colors as $c) {
+                if (empty($c['_id'])) {
+                    continue;
+                }
+                $title = !empty($c['title']) ? $c['title'] : $c['_id'];
+                $options .= sprintf(
+                    '<option value="var(--e-global-color-%1$s)">%2$s</option>',
+                    esc_attr($c['_id']),
+                    esc_html($title . (!empty($c['color']) ? ' ' . $c['color'] : ''))
+                );
+            }
+            $options .= '</optgroup>';
+        }
+    }
+
+    if ($options === '') {
+        return '';
+    }
+
+    return '<select class="hrl-preset" title="帶入設計系統色票（Design Token）">'
+        . '<option value="">主題色票…</option>' . $options . '</select>';
 }
 
 /**
