@@ -3,7 +3,7 @@
  * Plugin Name: Hreflang Manager & Language Switcher
  * Plugin URI:  https://github.com/Shawn66168/hreflang-manager
  * Description: Manage hreflang alternate tags and language switcher. Supports ACF custom URL fields for multi-language SEO.
- * Version:     1.4.0
+ * Version:     1.4.1
  * Requires at least: 5.0
  * Requires PHP: 7.4
  * Author:      CHUANG,HSIN-HSUEH
@@ -22,7 +22,7 @@ if (!defined('ABSPATH')) {
 }
 
 // 定義常數
-define('HREFLANG_MANAGER_VERSION', '1.4.0');
+define('HREFLANG_MANAGER_VERSION', '1.4.1');
 define('HREFLANG_MANAGER_PLUGIN_FILE', __FILE__);
 define('HREFLANG_MANAGER_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('HREFLANG_MANAGER_PLUGIN_URL', plugin_dir_url(__FILE__));

@@ -108,7 +108,16 @@ function hreflang_get_alt_urls_for_current() {
     $languages = hreflang_get_languages();
     $urls = [];
     
-    if (is_singular()) {
+    if (is_front_page() || is_home()) {
+        // 首頁：各語言首頁互為對等頁。
+        // 必須先於 is_singular 判斷：靜態首頁（page_on_front）同時滿足 is_singular，
+        // 若先走 meta 分支會因首頁 path 為 "/" 無法自動對應而完全不輸出。
+        foreach ($languages as $lang) {
+            if (!$lang['active']) continue;
+            $urls[$lang['code']] = trailingslashit($lang['domain']);
+        }
+
+    } elseif (is_singular()) {
         // 文章或頁面：手填 meta 優先，未填時可自動以相同路徑對應
         $post_id = get_the_ID();
 
@@ -131,13 +140,6 @@ function hreflang_get_alt_urls_for_current() {
                     $urls[$lang['code']] = $url;
                 }
             }
-        }
-
-    } elseif (is_front_page() || is_home()) {
-        // 首頁：各語言首頁互為對等頁
-        foreach ($languages as $lang) {
-            if (!$lang['active']) continue;
-            $urls[$lang['code']] = trailingslashit($lang['domain']);
         }
     }
     // 其他頁面（日期/作者 archive 等）沒有可靠的對等 URL，不輸出 alternate

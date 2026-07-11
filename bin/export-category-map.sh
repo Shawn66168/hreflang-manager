@@ -4,7 +4,7 @@
 set -euo pipefail
 SITEMAP="${1:?用法: export-category-map.sh <post-sitemap.xml URL>}"
 
-BASE=$(echo "$SITEMAP" | sed 's|\(https\?://[^/]*\).*|\1|')
+BASE=$(echo "$SITEMAP" | sed -E 's|(https?://[^/]*).*|\1|')
 curl -sL --max-time 30 "$SITEMAP" | tr -d '\r' \
   | grep -o '<loc>[^<]*</loc>' | sed 's/<[^>]*>//g' \
   | sed "s|$BASE/||; s|/$||" \
