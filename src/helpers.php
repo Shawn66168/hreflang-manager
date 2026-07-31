@@ -138,15 +138,31 @@ function hreflang_get_alternate_urls() {
     $languages = hreflang_get_languages();
     
     // 判斷當前頁面類型
-    if (is_singular()) {
+    // is_home()/is_front_page() 必須先於 is_singular() 判斷：靜態首頁（page_on_front）同時滿足 is_singular()
+    if (is_home() || is_front_page()) {
+        // 首頁：各語言首頁互為對等頁，靜態首頁手填 meta 優先；標記 "-" 表示該語言無對應版本，不輸出。
+        $front_id = (int) get_option('page_on_front');
+
+        foreach ($languages as $lang) {
+            if (!$lang['active']) continue;
+
+            $meta = $front_id ? trim((string) get_post_meta($front_id, 'alt_' . $lang['code'] . '_url', true)) : '';
+
+            if ($meta === '-') {
+                continue;
+            }
+
+            $urls[$lang['code']] = $meta !== '' ? $meta : trailingslashit($lang['domain']);
+        }
+    } elseif (is_singular()) {
         // 文章或頁面
         $post_id = get_the_ID();
         foreach ($languages as $lang) {
             if (!$lang['active']) continue;
-            
+
             $meta_key = 'alt_' . $lang['code'] . '_url';
             $alt_url = get_post_meta($post_id, $meta_key, true);
-            
+
             if (!empty($alt_url)) {
                 $urls[$lang['code']] = $alt_url;
             }
@@ -165,12 +181,6 @@ function hreflang_get_alternate_urls() {
                     $urls[$lang['code']] = $alt_url;
                 }
             }
-        }
-    } elseif (is_home() || is_front_page()) {
-        // 首頁
-        foreach ($languages as $lang) {
-            if (!$lang['active']) continue;
-            $urls[$lang['code']] = trailingslashit($lang['domain']);
         }
     } elseif (is_search()) {
         // 搜尋頁

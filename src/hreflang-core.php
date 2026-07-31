@@ -109,12 +109,21 @@ function hreflang_get_alt_urls_for_current() {
     $urls = [];
     
     if (is_front_page() || is_home()) {
-        // 首頁：各語言首頁互為對等頁。
+        // 首頁：各語言首頁互為對等頁，靜態首頁手填 meta 優先；標記 "-" 表示該語言無對應版本，不輸出。
         // 必須先於 is_singular 判斷：靜態首頁（page_on_front）同時滿足 is_singular，
         // 若先走 meta 分支會因首頁 path 為 "/" 無法自動對應而完全不輸出。
+        $front_id = (int) get_option('page_on_front');
+
         foreach ($languages as $lang) {
             if (!$lang['active']) continue;
-            $urls[$lang['code']] = trailingslashit($lang['domain']);
+
+            $meta = $front_id ? trim((string) get_post_meta($front_id, 'alt_' . $lang['code'] . '_url', true)) : '';
+
+            if ($meta === '-') {
+                continue;
+            }
+
+            $urls[$lang['code']] = $meta !== '' ? $meta : trailingslashit($lang['domain']);
         }
 
     } elseif (is_singular()) {
