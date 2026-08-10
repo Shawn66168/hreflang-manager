@@ -61,12 +61,19 @@ function hreflang_output_hreflang() {
         esc_url($current_url)
     );
 
-    // 2. 輸出 x-default（只在預設語言的首頁）
+    // 2. 輸出 x-default（指向當前頁面的預設語言版本；只要有 hreflang 對等組就輸出，不限首頁）
     $default_lang = hreflang_get_default_language();
-    if ($current_lang === $default_lang && (is_front_page() || is_home())) {
+    if ($current_lang === $default_lang) {
+        $x_default_url = $current_url;
+    } elseif (!empty($alternate_urls[$default_lang])) {
+        $x_default_url = $alternate_urls[$default_lang];
+    } else {
+        $x_default_url = null;
+    }
+    if ($x_default_url) {
         printf(
             '<link rel="alternate" hreflang="x-default" href="%s" />'."\n",
-            esc_url(hreflang_normalize_url(home_url('/')))
+            esc_url(hreflang_normalize_url($x_default_url))
         );
     }
 

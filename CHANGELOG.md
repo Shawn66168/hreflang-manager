@@ -1,5 +1,10 @@
 ﻿# 更新日誌
 
+## [1.4.6] - 2026-08-10
+
+### 修正
+- 🐛 x-default 只在「預設語言站的首頁」輸出：`is_front_page() || is_home()` 限制讓所有子頁面（文章、分類頁等）即使有完整 hreflang 對等組也不會輸出 x-default，`$current_lang === $default_lang` 限制則讓非預設語言站（portwell.tw／portwell.cl）連首頁都沒有 x-default，導致 SEO 稽核工具持續標記缺少 x-default。現在只要頁面有 hreflang 對等組就會輸出 x-default，並統一指向該頁的預設語言版本（自己是預設語言時指向自己，否則指向 `$alternate_urls[$default_lang]`），不限首頁、不限站台
+
 ## [1.4.5] - 2026-08-10
 
 ### 修正
