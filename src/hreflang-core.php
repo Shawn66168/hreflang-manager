@@ -117,7 +117,7 @@ function hreflang_get_alt_urls_for_current() {
         foreach ($languages as $lang) {
             if (!$lang['active']) continue;
 
-            $meta = $front_id ? trim((string) get_post_meta($front_id, 'alt_' . $lang['code'] . '_url', true)) : '';
+            $meta = $front_id ? hreflang_get_raw_alt_meta($front_id, $lang['code']) : '';
 
             if ($meta === '-') {
                 continue;

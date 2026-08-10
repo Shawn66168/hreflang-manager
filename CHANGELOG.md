@@ -1,5 +1,10 @@
 ﻿# 更新日誌
 
+## [1.4.3] - 2026-08-10
+
+### 修正
+- 🐛 舊版（改版前）meta key 相容 fallback：外掛改版時將 alt URL meta key 從 `alt_tw_url`／`alt_es_url` 改成依 `hreflang_languages` 語言代碼命名的 `alt_zh-hant_url`／`alt_es-419_url`，但既有近千篇文章的資料仍存在舊 key 下，導致新版讀不到而完全不輸出 hreflang alternate（含語言切換器退化成只連網域首頁）。新增 `hreflang_get_raw_alt_meta()`：新格式 key 未填寫時退回對應的舊格式 key，涵蓋 hreflang 輸出（含靜態首頁分支）、語言切換器、以及「缺少對應語言」後台提醒
+
 ## [1.4.2] - 2026-07-31
 
 ### 修正

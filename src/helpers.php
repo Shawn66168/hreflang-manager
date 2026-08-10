@@ -312,16 +312,55 @@ function hreflang_is_auto_same_slug_enabled() {
 }
 
 /**
+ * 語言代碼 → 舊版（改版前）meta key 對應。
+ *
+ * 外掛改版前，部分語言的對應 URL 是存在這些舊 key 下（例如遷移自
+ * Portwell 原始 hreflang snippet 的既有內容）。新 key 未填寫時，
+ * 讀取這裡的舊 key 作為相容 fallback，避免既有資料被視為「未填寫」。
+ *
+ * @param string $lang_code
+ * @return string 找不到對應舊 key 時回傳空字串
+ */
+function hreflang_get_legacy_meta_key($lang_code) {
+    $legacy_map = [
+        'zh-hant' => 'alt_tw_url',
+        'es-419'  => 'alt_es_url',
+    ];
+
+    return $legacy_map[$lang_code] ?? '';
+}
+
+/**
+ * 取得文章的 alt URL meta 原始值；新格式 key 未填寫時退回相容的舊格式 key。
+ *
+ * @param int    $post_id
+ * @param string $lang_code
+ * @return string
+ */
+function hreflang_get_raw_alt_meta($post_id, $lang_code) {
+    $meta = trim((string) get_post_meta($post_id, 'alt_' . $lang_code . '_url', true));
+
+    if ($meta === '') {
+        $legacy_key = hreflang_get_legacy_meta_key($lang_code);
+        if ($legacy_key !== '') {
+            $meta = trim((string) get_post_meta($post_id, $legacy_key, true));
+        }
+    }
+
+    return $meta;
+}
+
+/**
  * 取得文章在指定語言的對應 URL。
- * 手動填寫的 meta 優先；啟用「同 slug 自動對應」時，
- * 未填寫的語言以「該語言網域＋相同路徑」自動產生。
+ * 手動填寫的 meta 優先（新格式未填時退回舊格式相容 key）；
+ * 啟用「同 slug 自動對應」時，未填寫的語言以「該語言網域＋相同路徑」自動產生。
  *
  * @param int   $post_id
  * @param array $lang 語言設定陣列
  * @return string 找不到對應時回傳空字串
  */
 function hreflang_get_post_language_url($post_id, $lang) {
-    $meta = trim((string) get_post_meta($post_id, 'alt_' . $lang['code'] . '_url', true));
+    $meta = hreflang_get_raw_alt_meta($post_id, $lang['code']);
 
     // 「-」＝此語言無對應版本（僅本地發布的文章）：不輸出 hreflang、也不自動對應
     if ($meta === '-') {
@@ -378,7 +417,7 @@ function hreflang_get_missing_language_urls($object_id, $object_type = 'post') {
         
         if ($object_type === 'post') {
             $meta_key = 'alt_' . $lang['code'] . '_url';
-            $value = get_post_meta($object_id, $meta_key, true);
+            $value = hreflang_get_raw_alt_meta($object_id, $lang['code']);
         } else {
             $meta_key = 'term_alt_' . $lang['code'] . '_url';
             $value = get_term_meta($object_id, $meta_key, true);
