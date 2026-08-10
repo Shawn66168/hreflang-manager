@@ -343,7 +343,12 @@ function hreflang_get_raw_alt_meta($post_id, $lang_code) {
     if ($meta === '') {
         $legacy_key = hreflang_get_legacy_meta_key($lang_code);
         if ($legacy_key !== '') {
-            $meta = trim((string) get_post_meta($post_id, $legacy_key, true));
+            $legacy_value = trim((string) get_post_meta($post_id, $legacy_key, true));
+            // 舊 key 可能存到非網址的壞資料（例如失敗的自動化流程寫入的文字）；
+            // 只有「-」或看起來像網址才當作有效值退回，避免把壞資料當 href 印出。
+            if ($legacy_value === '-' || filter_var($legacy_value, FILTER_VALIDATE_URL)) {
+                $meta = $legacy_value;
+            }
         }
     }
 

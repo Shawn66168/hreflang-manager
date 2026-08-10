@@ -1,5 +1,10 @@
 ﻿# 更新日誌
 
+## [1.4.5] - 2026-08-10
+
+### 修正
+- 🐛 `hreflang_get_raw_alt_meta()` 的舊 key fallback 沒有驗證內容是不是網址：正式站發現有文章的舊 key（`alt_tw_url`）存的是自動化流程寫壞的非網址文字，1.4.3 加的 fallback 會原封不動把這段文字印成 `<link hreflang="..." href="...">` 的 href。現在只有舊 key 的值是「-」或通過 `FILTER_VALIDATE_URL` 才會被當作有效值退回，否則視同未填寫，交給「同 slug 自動對應」處理
+
 ## [1.4.4] - 2026-08-10
 
 ### 修正
