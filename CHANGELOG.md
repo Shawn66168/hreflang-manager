@@ -1,5 +1,10 @@
 ﻿# 更新日誌
 
+## [1.4.4] - 2026-08-10
+
+### 修正
+- 🐛 ACF 欄位群組（`group_hreflang`）的 URL placeholder 多包了一層 `https://`：`$lang['domain']` 存的本來就是含 scheme 的完整網址（例如 `https://www.portwell.tw`），欄位卻又寫死 `'https://' . $lang['domain']`，導致後台輸入框 placeholder 顯示成 `https://https://www.portwell.tw/...`。改成跟原生 metabox 一致，先用 `parse_url()` 取出 host 再組字串。純顯示問題，不影響已儲存的資料
+
 ## [1.4.3] - 2026-08-10
 
 ### 修正

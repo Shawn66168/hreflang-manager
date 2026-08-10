@@ -186,7 +186,7 @@ function hreflang_register_acf_fields() {
             'name' => 'alt_' . $lang['code'] . '_url',
             'type' => 'text',
             'instructions' => '輸入 ' . $lang['label'] . ' 版本的對應 URL；填「-」表示該語言無對應版本',
-            'placeholder' => 'https://' . $lang['domain'] . '/...',
+            'placeholder' => 'https://' . (parse_url($lang['domain'], PHP_URL_HOST) ?: $lang['domain']) . '/...',
         ];
     }
     
