@@ -54,7 +54,7 @@ global $wpdb;
 $stats = [];
 
 foreach ($legacy_map as $new_code => $legacy_key) {
-    $stats[$new_code] = ['examined' => 0, 'skip_new_set' => 0, 'skip_empty' => 0, 'matches_default' => 0, 'write_exception' => 0];
+    $stats[$new_code] = ['examined' => 0, 'skip_new_set' => 0, 'skip_empty' => 0, 'matches_default' => 0, 'write_exception' => 0, 'skip_invalid' => 0];
 
     if (empty($lang_by_code[$new_code]['domain'])) {
         WP_CLI::warning("略過 {$new_code}：hreflang_languages 設定裡找不到網域，無法判斷預設規則");
@@ -90,6 +90,12 @@ foreach ($legacy_map as $new_code => $legacy_key) {
             continue;
         }
 
+        if (!filter_var($legacy_value, FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $legacy_value)) {
+            WP_CLI::warning("#{$post_id} {$legacy_key} 的值不是有效網址，略過不搬：" . mb_substr($legacy_value, 0, 80));
+            $stats[$new_code]['skip_invalid']++;
+            continue;
+        }
+
         $default_url = mlm_default_url($post_id, $domain);
         if ($default_url !== '' && mlm_normalize($legacy_value) === mlm_normalize($default_url)) {
             $stats[$new_code]['matches_default']++;
@@ -107,13 +113,14 @@ foreach ($legacy_map as $new_code => $legacy_key) {
 
 foreach ($stats as $code => $s) {
     WP_CLI::log(sprintf(
-        '[%s] %s：檢視 %d，符合預設規則略過 %d，新 key 已有值略過 %d，空值/無對應略過 %d，寫入例外 %d',
+        '[%s] %s：檢視 %d，符合預設規則略過 %d，新 key 已有值略過 %d，空值/無對應略過 %d，非網址略過 %d，寫入例外 %d',
         $mode,
         $code,
         $s['examined'],
         $s['matches_default'],
         $s['skip_new_set'],
         $s['skip_empty'],
+        $s['skip_invalid'],
         $s['write_exception']
     ));
 }
