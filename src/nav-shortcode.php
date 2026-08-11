@@ -53,14 +53,34 @@ function hreflang_switcher_shortcode($atts) {
     $current_lang = hreflang_detect_current_language();
     $post_id      = is_singular() ? get_the_ID() : 0;
 
+    $term_id = 0;
+    if (!$post_id && (is_category() || is_tag() || is_tax())) {
+        $queried_term = get_queried_object();
+        if ($queried_term && !is_wp_error($queried_term) && !empty($queried_term->term_id)) {
+            $term_id = $queried_term->term_id;
+        }
+    }
+
     $lang_data = [];
     foreach ($languages as $lang) {
         if (!$lang['active']) continue;
 
+        $raw_meta = '';
         $url = '';
+
         if ($post_id) {
+            $raw_meta = hreflang_get_raw_alt_meta($post_id, $lang['code']);
             $url = hreflang_get_post_language_url($post_id, $lang);
+        } elseif ($term_id) {
+            $raw_meta = trim((string) get_term_meta($term_id, 'term_alt_' . $lang['code'] . '_url', true));
+            $url = ($raw_meta !== '' && $raw_meta !== '-') ? $raw_meta : '';
         }
+
+        // 「-」＝此語言明確標記無對應版本，語言切換器不顯示該選項（不 fallback 到該語言首頁）
+        if ($raw_meta === '-') {
+            continue;
+        }
+
         if (empty($url)) {
             $url = trailingslashit($lang['domain']);
         }

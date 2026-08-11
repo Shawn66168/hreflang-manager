@@ -152,7 +152,8 @@ function hreflang_get_alt_urls_for_current() {
             foreach ($languages as $lang) {
                 if (!$lang['active']) continue;
                 $url = get_term_meta($term->term_id, 'term_alt_' . $lang['code'] . '_url', true);
-                if ($url) {
+                // 「-」＝此語言無對應版本，不輸出 hreflang（跟首頁／文章的規則一致）
+                if ($url && $url !== '-') {
                     $urls[$lang['code']] = $url;
                 }
             }
