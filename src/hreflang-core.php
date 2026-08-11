@@ -374,12 +374,13 @@ function hreflang_add_term_meta_fields($term) {
             esc_attr($meta_key),
             esc_html($lang['label'])
         );
+        $placeholder = 'https://' . (parse_url($lang['domain'], PHP_URL_HOST) ?: $lang['domain']) . '/...';
         printf(
-            '<input type="url" id="%s" name="%s" value="%s" class="regular-text" placeholder="https://%s/..." />',
+            '<input type="url" id="%s" name="%s" value="%s" class="regular-text" placeholder="%s" />',
             esc_attr($meta_key),
             esc_attr($meta_key),
             esc_attr($value),
-            esc_attr($lang['domain'])
+            esc_attr($placeholder)
         );
         echo '</p>';
     }

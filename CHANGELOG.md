@@ -1,5 +1,10 @@
 ﻿# 更新日誌
 
+## [1.4.7] - 2026-08-11
+
+### 修正
+- 🐛 分類／標籤編輯頁 term meta 欄位的 URL placeholder 多包了一層 `https://`：跟 1.4.4 修過的 ACF 欄位是同一種錯誤，但 `hreflang_add_term_meta_fields()`（term meta box）當時沒套用到同樣的修正，`placeholder="https://%s/..."` 直接接上已含 scheme 的 `$lang['domain']`，變成 `https://https://www.portwell.com.tw/...`。改成跟 ACF 欄位／文章 meta box 一致，先用 `parse_url()` 取出 host 再組字串。純顯示問題，不影響已儲存的資料
+
 ## [1.4.6] - 2026-08-10
 
 ### 修正
