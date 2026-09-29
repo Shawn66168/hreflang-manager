@@ -55,7 +55,6 @@ wp-hreflang-manager/
 ├── README.md                        # GitHub 簡潔說明
 ├── INSTALLATION.md                  # 安裝指南
 ├── QUICKSTART.md                    # 快速開始
-├── EXAMPLES.md                      # 使用範例
 ├── CHANGELOG.md                     # 更新日誌
 ├── LICENSE                          # GPL-2.0 授權
 │

@@ -41,7 +41,6 @@ git clone https://github.com/Shawn66168/hreflang-manager.git
 
 📘 **[完整安裝指南](INSTALLATION.md)** - 詳細的安裝與設定步驟  
 📗 **[快速開始](QUICKSTART.md)** - 5 分鐘快速設定  
-📙 **[使用範例](EXAMPLES.md)** - 更多實際應用案例  
 📕 **[開發規範](.skills/ARCHITECTURE.md)** - 架構設計與開發指南  
 📄 **[WordPress.org 說明](readme.txt)** - 完整插件說明文檔
 
