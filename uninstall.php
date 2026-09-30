@@ -32,6 +32,28 @@ function hreflang_manager_delete_options() {
     delete_option('hreflang_style_themes');
 }
 
+/**
+ * 同一站台是否還裝著另一份 hreflang-manager（例如改名保留的舊副本）
+ *
+ * 各份副本共用同一組 option，刪除其中一份時若照常清理，
+ * 仍在使用的那份會失去全部設定而停止輸出 hreflang。
+ *
+ * @return bool
+ */
+function hreflang_manager_has_other_copy() {
+    if (!function_exists('get_plugins')) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+
+    foreach (array_keys(get_plugins()) as $plugin_file) {
+        if ($plugin_file !== WP_UNINSTALL_PLUGIN && basename($plugin_file) === 'hreflang-manager.php') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function hreflang_manager_uninstall_cleanup() {
     // 刪除外掛設定選項
     hreflang_manager_delete_options();
@@ -95,5 +117,7 @@ function hreflang_manager_cleanup_term_meta() {
     );
 }
 
-// 執行清理
-hreflang_manager_uninstall_cleanup();
+// 執行清理（還有其他副本在用這組設定時跳過）
+if (!hreflang_manager_has_other_copy()) {
+    hreflang_manager_uninstall_cleanup();
+}
