@@ -53,6 +53,11 @@ function hreflang_switcher_shortcode($atts) {
     $current_lang = hreflang_detect_current_language();
     $post_id      = is_singular() ? get_the_ID() : 0;
 
+    // WooCommerce 商店頁（商品封存頁）沿用商店頁的對應設定，跟 <head> hreflang 一致
+    if (!$post_id && function_exists('is_shop') && is_shop()) {
+        $post_id = max(0, (int) wc_get_page_id('shop'));
+    }
+
     $term_id = 0;
     if (!$post_id && (is_category() || is_tag() || is_tax())) {
         $queried_term = get_queried_object();

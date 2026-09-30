@@ -145,6 +145,22 @@ function hreflang_get_alt_urls_for_current() {
             }
         }
 
+    } elseif (function_exists('is_shop') && is_shop()) {
+        // WooCommerce 商店頁（商品封存頁）：沿用商店頁的手填 meta／「-」／同路徑自動對應。
+        // 第 2 頁以後各站分頁內容不對等，不輸出（否則對方第 1 頁不會回指）。
+        $shop_id = wc_get_page_id('shop');
+        $paged = (int) get_query_var('paged');
+
+        if ($shop_id > 0 && $paged <= 1) {
+            foreach ($languages as $lang) {
+                if (!$lang['active']) continue;
+                $url = hreflang_get_post_language_url($shop_id, $lang);
+                if ($url) {
+                    $urls[$lang['code']] = $url;
+                }
+            }
+        }
+
     } elseif (is_category() || is_tag() || is_tax()) {
         // 支援所有分類頁面（部落格分類/標籤 + 自訂分類 + WooCommerce 分類）
         $term = get_queried_object();
