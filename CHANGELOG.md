@@ -1,5 +1,10 @@
 ﻿# 更新日誌
 
+## [Unreleased]
+
+### 新增
+- 🧰 多站 hreflang 對應工具（不改外掛本體）：`scripts/export-hreflang-inventory.php` 各站匯出已發布內容與 alt meta（唯讀）→ `bin/plan-hreflang-cluster.py --anchor <code>` 以權威站為準、用「同 post type＋同 slug」比對產生各站寫入計畫（對方有＝完整 URL、沒有／在地內容＝「-」、既有「-」保留且雙向一致、noindex 視為無對應）→ `scripts/apply-hreflang-plan.php` 先寫回滾檔再套用、`scripts/rollback-hreflang-plan.php` 還原。用於「同 slug 自動對應」因各站分類路徑不一致而指向不存在網址的情況（2026-10-01 四站加入 zh-Hans 時實際使用，寫入 2,288 筆）
+
 ## [1.4.10] - 2026-09-30
 
 ### 新增
