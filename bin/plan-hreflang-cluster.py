@@ -125,8 +125,10 @@ def main():
                     for dst in inv:
                         if dst == anchor:
                             continue
-                        group[dst] = p if dst == src else counterpart(anchor, head, dst)
+                        group[dst] = counterpart(anchor, head, dst)
                     group = {k: v for k, v in group.items() if v is not None}
+                    # 權威站對回來的必須正是這一頁；重複頁（例如 slug 多了 -2）或單方面宣告的頁面
+                    # 不算同一組，否則會輸出對方不回指的 hreflang
                     if src != anchor and group.get(src) is not p:
                         group = {}
                 if not group:
